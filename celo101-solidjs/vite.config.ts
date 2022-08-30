@@ -17,16 +17,18 @@ export default {
     port: 3000,
   },
   build: {
-    target: 'esnext',
+    target: 'es2020',
     rollupOptions: {
       plugins: [
         // Enable rollup polyfills plugin
         // used during production bundling
         rollupNodePolyFill()
       ]
+    },
+    commonjsOptions: {
+      transformMixedEsModules: true,
     }
   },
-
   resolve: {
     alias: {
       // This Rollup aliases are extracted from @esbuild-plugins/node-modules-polyfill,
