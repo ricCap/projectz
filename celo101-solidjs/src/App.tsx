@@ -1,5 +1,5 @@
 import type { Component } from 'solid-js';
-import Comp from './Comp';
+import Comp from './marketplace/Comp';
 
 const App: Component = () => {
   return (

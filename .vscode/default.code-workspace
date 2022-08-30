@@ -1,0 +1,19 @@
+{
+    "folders": [
+        {
+            "path": ".."
+        },
+        {
+            "path": "../celo101"
+        },
+        {
+            "path": "../celo101-solidjs"
+        },
+        {
+            "path": "../celo201"
+        },
+        {
+            "path": "../celo201-react"
+        }
+    ]
+}

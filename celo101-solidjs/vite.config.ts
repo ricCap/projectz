@@ -32,6 +32,7 @@ export default {
       // by node-globals-polyfill
       util: 'rollup-plugin-node-polyfills/polyfills/util',
       sys: 'util',
+      "events/": 'rollup-plugin-node-polyfills/polyfills/events',
       events: 'rollup-plugin-node-polyfills/polyfills/events',
       stream: 'rollup-plugin-node-polyfills/polyfills/stream',
       path: 'rollup-plugin-node-polyfills/polyfills/path',
