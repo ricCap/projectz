@@ -12,10 +12,10 @@ export default function Navbar(props: IHomeProps): JSXElement {
                     when={props.connected[0]()}
                     fallback={
                         <>
-                            <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 content-end" >Connect</button>
+                            <button type="button" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 content-end cursor-not-allowed" disabled >Connect</button>
                         </>
                     }>
-                    <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 content-end" disabled >Disconnect</button>
+                    <button type="button" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 content-end cursor-not-allowed" disabled >Disconnect</button>
                 </Show>
             </div>
             <br></br>
