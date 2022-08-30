@@ -1,18 +1,23 @@
 {
     "folders": [
         {
+            "name": "projectz",
             "path": ".."
         },
         {
+            "name": "celo101",
             "path": "../celo101"
         },
         {
+            "name": "celo101-solidjs",
             "path": "../celo101-solidjs"
         },
         {
+            "name": "celo201",
             "path": "../celo201"
         },
         {
+            "name": "celo201-react",
             "path": "../celo201-react"
         }
     ]
