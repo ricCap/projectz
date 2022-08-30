@@ -9,6 +9,7 @@ import { NodeModulesPolyfillPlugin } from '@esbuild-plugins/node-modules-polyfil
 import rollupNodePolyFill from 'rollup-plugin-node-polyfills'
 
 export default {
+  base: '/projectz/',
   plugins: [solidPlugin()],
   server: {
     port: 3000,
