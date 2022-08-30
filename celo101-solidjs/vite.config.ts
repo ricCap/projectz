@@ -1,5 +1,5 @@
-import { defineConfig } from 'vite';
-import solidPlugin from 'vite-plugin-solid';
+import { defineConfig } from 'vite'
+import solidPlugin from 'vite-plugin-solid'
 
 // yarn add --dev @esbuild-plugins/node-globals-polyfill
 import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfill'
@@ -10,7 +10,9 @@ import rollupNodePolyFill from 'rollup-plugin-node-polyfills'
 
 export default {
   base: '/projectz/',
-  plugins: [solidPlugin()],
+  plugins: [
+    solidPlugin()
+  ],
   server: {
     port: 3000,
   },
