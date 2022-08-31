@@ -42,14 +42,19 @@ export default function Comp(props: ICompProps) {
   const [data, { mutate, refetch }] = createResource(props.connected, getProducts);
   const compProps: IComp = mergeProps({ message, setMessage, mutate }, props);
 
-  return (<div>
-    <h1 class="bg-sky-100 m100">Message: {message()}</h1>
-    <button class="bg-black text-white font-bold py-2 px-4 rounded-full" onClick={() => connectCeloWallet(compProps)}>Connect with browser extension</button>
-    <button class="bg-black text-white font-bold py-2 px-4 rounded-full" onClick={() => connectWalletConnect(compProps)}>Connect with wallet connect</button>
-    <button class="bg-black text-white font-bold py-2 px-4 rounded-full" onClick={() => getBalance(compProps)}>Get balance</button>
-    <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-full" onClick={() => refetch()}>Get products</button>
-    <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-full" onClick={() => writeProduct()}>Write new product</button>
-    <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full" onClick={() => disconnect(compProps)}>Disconnect</button>
+  return (<div class="mt-5">
+    <button class="bg-black text-white font-bold py-2 px-4" onClick={() => connectCeloWallet(compProps)}>Connect with browser extension</button>
+    <button class="bg-black text-white font-bold py-2 px-4" onClick={() => connectWalletConnect(compProps)}>Connect with wallet connect</button>
+    <button class="bg-black text-white font-bold py-2 px-4" onClick={() => getBalance(compProps)}>Get balance</button>
+    <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4" onClick={() => refetch()}>Get products</button>
+    <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4" onClick={() => writeProduct()}>Write new product</button>
+    <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4" onClick={() => disconnect(compProps)}>Disconnect</button>
+
+    <div class="bg-sky-100 m100 my-5 p-5 text-center">
+      DebugBox:
+      <h1 class="font-bold">{message()}</h1>
+    </div>
+
 
     <Show when={!data.loading} fallback={<>Searching...</>}>
       <ul>

@@ -4,7 +4,7 @@
     "dev": "vite",
     "build": "npm run build:vite && npm run build:css",
     "build:vite": "vite build",
-    "build:css": "npx tailwindcss -i ./src/input.css -o ./dist/output.css",
+    "build:css": "npx tailwindcss -i ./src/index.css -o ./dist/output.css",
     "serve": "vite preview",
     "compile": "npx hardhat compile",
     "deploy": "npx hardhat run --network alfajores scripts/deploy.ts"

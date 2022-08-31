@@ -1,27 +1,30 @@
-import { Component, createSignal } from 'solid-js'
+import { Component, createSignal, createResource } from 'solid-js'
 import Comp from './marketplace/Comp'
 import Navbar from './Home'
 
-// import { getI18N } from './i18n'
-
-// const i18n = getI18N('en')
+import { getI18N } from './i18n'
 
 /** Various signals that should be passed down to other components */
 const connectedSignal = createSignal(false);
 const [connected, setConnected] = connectedSignal
+const [locale, setLocale] = createSignal(getI18N("en"))
 
 const App: Component = () => {
+
   return (
     <div class="bg-blue-700">
       <div class="container mx-auto bg-white h-screen">
         <div class="flex flex-col h-screen">
-          <Navbar connected={connectedSignal} />
+          <Navbar connected={connectedSignal} locale={locale} setLocale={setLocale} />
           <main class="mb-auto">
-            <h1 class="flex-auto text-lg font-semibold text-slate-900">
-              Hi
+            <h1 class="flex-auto text-lg text-center font-semibold text-slate-900">
+              {locale().t("welcome")}
             </h1>
-            <p class="text-lg font-semibold text-slate-500">This app lets you connect the celo wallet extension and retrieve your balance</p>
             <Comp connected={connected} setConnected={setConnected} />
+            <div>
+              Extra debug info:
+              <p>Locale: {locale().locale()}</p>
+            </div>
           </main>
 
 
