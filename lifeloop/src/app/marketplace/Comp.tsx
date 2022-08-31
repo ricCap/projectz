@@ -1,7 +1,11 @@
-import Web3 from 'web3'
 import * as constants from './constants'
 import * as types from './types'
+
+
+import { AbiItem } from 'web3-utils'
 import * as contractkit from '@celo/contractkit'
+import Web3 from '@celo/contractkit/node_modules/web3'
+import { Contract } from '@celo/contractkit/node_modules/web3-eth-contract'
 
 import WalletConnectProvider from '@walletconnect/web3-provider';
 
@@ -11,8 +15,7 @@ import BigNumber from "bignumber.js"
 import marketplaceABI from '../../../artifacts/contracts/Marketplace.sol/Marketplace.json'
 
 export let kit: contractkit.ContractKit
-export let contract: any // need to find a way to add types here
-
+export let contract: Contract
 
 interface ICompProps {
   connected: Accessor<boolean>
@@ -122,7 +125,7 @@ async function _connect(props: IComp, web3: Web3) {
   const accounts = await kit.web3.eth.getAccounts()
   kit.defaultAccount = accounts[0]
 
-  contract = new kit.web3.eth.Contract(marketplaceABI.abi, constants.MPContractAddress)
+  contract = new kit.web3.eth.Contract(marketplaceABI.abi as unknown as AbiItem, constants.MPContractAddress)
   console.log(contract)
   props.setConnected(true)
   props.setMessage(`Connected: ${kit.defaultAccount}`)

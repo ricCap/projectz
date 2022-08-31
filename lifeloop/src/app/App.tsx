@@ -9,17 +9,24 @@ const connectedSignal = createSignal(false);
 const [connected, setConnected] = connectedSignal
 const [locale, setLocale] = createSignal(getI18N("en"))
 
+import url from './assets/infinity.svg'
+
 const App: Component = () => {
 
   return (
-    <div class="bg-blue-700">
+    <div class="bg-black">
       <div class="container mx-auto bg-white h-screen">
         <div class="flex flex-col h-screen">
           <Navbar connected={connectedSignal} locale={locale} setLocale={setLocale} />
           <main class="mb-auto">
-            <h1 class="flex-auto text-lg text-center font-semibold text-slate-900">
-              {locale().t("welcome")}
-            </h1>
+            <div class="flex flex-row">
+              <div class="flex-grow"><img src={url} class="float-right box-border h-32 w-32 ml-5" /></div>
+              <div class="font-bold text-center text-5xl p-5 m-auto">
+                {locale().t("welcome")}
+              </div>
+              <div class="flex-grow"><img src={url} class="box-border h-32 w-32 mr-5" /></div>
+            </div>
+
             <Comp connected={connected} setConnected={setConnected} />
             <div>
               Extra debug info:
@@ -27,9 +34,8 @@ const App: Component = () => {
             </div>
           </main>
 
-
-          <footer class="p-4 bg-white shadow md:flex md:items-center md:justify-center">
-            <span class="text-sm text-gray-500 sm:text-center">© 2022 <a href="https://google.com/" class="hover:underline">LifeLoop</a>. All Rights Reserved.
+          <footer class="p-4 bg-blue-700 shadow md:flex md:items-center md:justify-center">
+            <span class="text-sm text-white sm:text-center">© 2022 <a href="https://google.com/" class="hover:underline">LifeLoop</a>. All Rights Reserved.
             </span>
           </footer>
         </div>
