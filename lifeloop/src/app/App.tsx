@@ -28,10 +28,6 @@ const App: Component = () => {
             </div>
 
             <Comp connected={connected} setConnected={setConnected} />
-            <div>
-              Extra debug info:
-              <p>Locale: {locale().locale()}</p>
-            </div>
           </main>
 
           <footer class="p-4 bg-blue-700 shadow md:flex md:items-center md:justify-center">
