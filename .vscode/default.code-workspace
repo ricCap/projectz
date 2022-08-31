@@ -5,20 +5,24 @@
             "path": ".."
         },
         {
+            "name": "lifeloop",
+            "path": "../lifeloop"
+        },
+        {
             "name": "celo101",
-            "path": "../celo101"
+            "path": "../examples/celo101"
         },
         {
             "name": "celo101-solidjs",
-            "path": "../celo101-solidjs"
+            "path": "../examples//celo101-solidjs"
         },
         {
             "name": "celo201",
-            "path": "../celo201"
+            "path": "../examples//celo201"
         },
         {
             "name": "celo201-react",
-            "path": "../celo201-react"
+            "path": "../examples//celo201-react"
         }
     ]
 }
