@@ -13,10 +13,11 @@ import { createSignal, createResource, Show, For, Signal, Accessor, Setter, merg
 import BigNumber from "bignumber.js"
 
 import marketplaceABI from '../../../artifacts/contracts/Marketplace.sol/Marketplace.json'
+import managerABI from '../../../artifacts/contracts/Manager.sol/Manager.json'
 
 export let kit: contractkit.ContractKit
-export let contract: Contract
-
+export let marketplaceContract: Contract
+export let managerContract: Contract
 interface ICompProps {
   connected: Accessor<boolean>
   setConnected: Setter<boolean>
@@ -57,6 +58,7 @@ export default function Comp(props: ICompProps) {
     <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4" onClick={() => refetch()}>Get products</button>
     <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4" onClick={() => writeProduct()}>Write new product</button>
     <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4" onClick={() => disconnect(compProps)}>Disconnect</button>
+    <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4" onClick={() => getUserRole(compProps)}>Get User role</button>
 
     <Show when={!data.loading} fallback={<>Searching...</>}>
       <ul>
@@ -124,8 +126,8 @@ async function _connect(props: IComp, web3: Web3) {
   const accounts = await kit.web3.eth.getAccounts()
   kit.defaultAccount = accounts[0]
 
-  contract = new kit.web3.eth.Contract(marketplaceABI.abi as unknown as AbiItem, constants.MPContractAddress)
-  console.log(contract)
+  marketplaceContract = new kit.web3.eth.Contract(marketplaceABI.abi as unknown as AbiItem, constants.MPContractAddress)
+  managerContract = new kit.web3.eth.Contract(managerABI.abi as unknown as AbiItem, constants.ManagerContractAddress)
   props.setConnected(true)
   props.setMessage(`Connected: ${kit.defaultAccount}`)
 }
@@ -143,15 +145,21 @@ async function disconnect(props: IComp) {
   props.mutate([])
 }
 
+async function getUserRole(props: IComp): Promise<void> {
+  if (!managerContract) return
+  const role: string = await managerContract.methods.getRole().call()
+  props.setMessage(role)
+}
+
 async function getProducts(): Promise<types.Product[]> {
-  if (!contract) {
+  if (!marketplaceContract) {
     return []
   }
-  const _productsLength = await contract.methods.getProductsLength().call()
+  const _productsLength = await marketplaceContract.methods.getProductsLength().call()
   const _products: Promise<types.Product>[] = []
   for (let i = 0; i < _productsLength; i++) {
     const _product = async function (): Promise<types.Product> {
-      let p = await contract.methods.readProduct(i).call()
+      let p = await marketplaceContract.methods.readProduct(i).call()
       return {
         index: i,
         owner: p[0],
@@ -184,7 +192,7 @@ async function getBalance(props: IComp) {
 }
 
 async function writeProduct() {
-  await contract.methods.writeProduct(
+  await marketplaceContract.methods.writeProduct(
     "New product",
     "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Google_2015_logo.svg/1200px-Google_2015_logo.svg.png",
     "Description",

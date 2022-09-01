@@ -1,13 +1,16 @@
 {
   "name": "lifeloop",
   "scripts": {
-    "dev": "vite",
-    "build": "npm run build:vite && npm run build:css",
+    "build": "npm run build:vite && npm run build:css && npm run build:contract",
     "build:vite": "vite build",
     "build:css": "npx tailwindcss -i ./src/index.css -o ./dist/output.css",
+    "build:contract": "npx hardhat compile",
+    "dev": "vite",
     "serve": "vite preview",
-    "compile": "npx hardhat compile",
-    "deploy": "npx hardhat run --network alfajores scripts/deploy.ts"
+    "deploy": "npx hardhat run --network alfajores scripts/deploy.ts",
+    "test": "npm run test:contract",
+    "test:contract": "npx hardhat test",
+    "all": "npm run build && npm run test"
   },
   "license": "MIT",
   "dependencies": {
