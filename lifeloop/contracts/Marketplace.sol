@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity >=0.8.0 <0.9.0;
+pragma solidity >=0.8.4 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract Marketplace {
-    uint internal productsLength = 0;
+    uint256 internal productsLength = 0;
     address internal cUsdTokenAddress =
         0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1;
 
@@ -15,20 +15,20 @@ contract Marketplace {
         string image;
         string description;
         string location;
-        uint price;
-        uint sold;
+        uint256 price;
+        uint256 sold;
     }
 
-    mapping(uint => Product) internal products;
+    mapping(uint256 => Product) internal products;
 
     function writeProduct(
         string memory _name,
         string memory _image,
         string memory _description,
         string memory _location,
-        uint _price
+        uint256 _price
     ) public {
-        uint _sold = 0;
+        uint256 _sold = 0;
         products[productsLength] = Product(
             payable(msg.sender),
             _name,
@@ -41,7 +41,7 @@ contract Marketplace {
         productsLength++;
     }
 
-    function readProduct(uint _index)
+    function readProduct(uint256 _index)
         public
         view
         returns (
@@ -50,8 +50,8 @@ contract Marketplace {
             string memory,
             string memory,
             string memory,
-            uint,
-            uint
+            uint256,
+            uint256
         )
     {
         return (
@@ -65,7 +65,7 @@ contract Marketplace {
         );
     }
 
-    function buyProduct(uint _index) public payable {
+    function buyProduct(uint256 _index) public payable {
         require(
             IERC20(cUsdTokenAddress).transferFrom(
                 msg.sender,
@@ -77,7 +77,7 @@ contract Marketplace {
         products[_index].sold++;
     }
 
-    function getProductsLength() public view returns (uint) {
+    function getProductsLength() public view returns (uint256) {
         return (productsLength);
     }
 }
