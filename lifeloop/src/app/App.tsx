@@ -19,12 +19,12 @@ const App: Component = () => {
         <div class="flex flex-col h-screen">
           <Navbar connected={connectedSignal} locale={locale} setLocale={setLocale} />
           <main class="mb-auto">
-            <div class="flex flex-row">
-              <div class="flex-grow"><img src={url} class="float-right box-border h-32 w-32 ml-5" /></div>
-              <div class="font-bold text-center text-5xl p-5 m-auto">
+            <div class="flex flex-row justify-center items-center">
+              <div class=""><img src={url} class="box-border h-32 w-32 ml-5" /></div>
+              <div class="font-bold text-center text-5xl p-5">
                 {locale().t("welcome")}
               </div>
-              <div class="flex-grow"><img src={url} class="box-border h-32 w-32 mr-5" /></div>
+              <div class=""><img src={url} class="box-border h-32 w-32 mr-5" /></div>
             </div>
 
             <Comp connected={connected} setConnected={setConnected} />

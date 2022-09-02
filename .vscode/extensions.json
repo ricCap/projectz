@@ -1,6 +1,7 @@
 {
-    "recommendations": [
-        "esbenp.prettier-vscode",
-        "NomicFoundation.hardhat-solidity"
-    ]
+  "recommendations": [
+    "esbenp.prettier-vscode",
+    "nomicfoundation.hardhat-solidity",
+    "bradlc.vscode-tailwindcss"
+  ]
 }
