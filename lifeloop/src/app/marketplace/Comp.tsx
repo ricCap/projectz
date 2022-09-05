@@ -14,6 +14,7 @@ import BigNumber from "bignumber.js"
 
 import marketplaceABI from '../../../artifacts/contracts/Marketplace.sol/Marketplace.json'
 import managerABI from '../../../artifacts/contracts/Manager.sol/Manager.json'
+import Product from './Product'
 
 export let kit: contractkit.ContractKit
 export let marketplaceContract: Contract
@@ -65,7 +66,7 @@ export default function Comp(props: ICompProps) {
         <For each={data()}>
           {(product: types.Product) => (
             <li>
-              {product.name} by {product.owner}
+              <Product product={product}/>
             </li>
           )}
         </For>

@@ -1,12 +1,9 @@
-import type { Component } from 'solid-js';
-import Comp from './Comp';
 import { ERC20_DECIMALS } from './constants';
 import * as types from './types'
 
-
 export default function Product(props: any) {
 
-    const product: types.Product = props._product
+    const product: types.Product = props.product
     if (!product) {
         return <div>Product data is missing</div>
     }
@@ -16,7 +13,7 @@ export default function Product(props: any) {
             <div class="flex-none w-48 relative">
                 <img src="{product.image}" alt="" class="absolute inset-0 w-full h-full object-cover" loading="lazy" />
             </div>
-            <div>
+            <div class="font-semibold">
                 Sold: ${product.sold}
                 Name: ${product.name}
                 Description: ${product.description}
