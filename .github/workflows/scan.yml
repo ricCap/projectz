@@ -13,6 +13,7 @@ jobs:
         continue-on-error: true
         id: slither
         with:
+          target: lifeloop
           sarif: results.sarif
 
       - name: Upload SARIF file
