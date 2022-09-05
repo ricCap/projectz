@@ -12,6 +12,8 @@ jobs:
         uses: crytic/slither-action@v0.1.1
         continue-on-error: true
         id: slither
+        env:
+          MNEMONIC: "fake"
         with:
           target: lifeloop
           sarif: results.sarif
