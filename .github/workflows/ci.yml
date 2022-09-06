@@ -21,6 +21,8 @@ jobs:
         run: npm ci
 
       - name: Run hardhat Test
+        env:
+          MNEMONIC: "fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake"
         run: npm run all
 
       - name: Check diff
