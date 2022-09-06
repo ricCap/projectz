@@ -1,0 +1,8 @@
+#!/bin/sh
+
+echo "Running pre-push hook"
+echo "The script might fail if you have not previously run 'npm install'"
+
+npm run all
+
+exit 0

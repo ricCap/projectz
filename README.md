@@ -17,6 +17,8 @@ The charts in the wiki use the [Mermaid syntax](https://mermaid-js.github.io/mer
 
 Start the local development server with `npm run dev`. Make sure to install the dependencies with `npm install`.
 
+Make sure to run `git config --local core.hooksPath .githooks/` to ensure you always run all mandatory tasks before pushing your code.
+
 ## Template
 
 https://github.com/paulrberg/hardhat-template
