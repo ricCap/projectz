@@ -5,4 +5,10 @@ echo "The script might fail if you have not previously run 'npm install'"
 
 npm run all
 
+if [ "$(git diff --ignore-space-at-eol ./ | wc -l)" -gt "0" ]; then
+    echo "Detected uncommitted changes after build.  See status below:"
+    git diff
+    exit 1
+fi
+
 exit 0
