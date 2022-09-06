@@ -5,13 +5,14 @@
     "build:vite": "vite build",
     "build:css": "npx tailwindcss -i ./src/index.css -o ./dist/output.css",
     "build:contract": "npx hardhat compile",
+    "lint": "npm run lint:sol",
     "lint:sol": "solhint --config ./.solhint.json --max-warnings 0 \"contracts/**/*.sol\"",
     "dev": "vite",
     "serve": "vite preview",
     "deploy": "npx hardhat run --network alfajores scripts/deploy.ts",
     "test": "npm run test:contract",
     "test:contract": "npx hardhat test",
-    "all": "npm run build && npm run test"
+    "all": "npm run build && npm run test && npm run lint"
   },
   "license": "MIT",
   "dependencies": {

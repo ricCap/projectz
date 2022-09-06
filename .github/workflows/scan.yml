@@ -15,7 +15,6 @@ jobs:
         env:
           MNEMONIC: "fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake"
         with:
-          target: lifeloop
           sarif: results.sarif
 
       - name: Upload SARIF file
