@@ -23,7 +23,7 @@
     "bignumber.js": "9.0.1",
     "dotenv": "^16.0.1",
     "node-polyglot": "^2.4.2",
-    "solid-js": "1.5.1"
+    "solid-js": "1.5.4"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^1.0.2",
