@@ -1,6 +1,6 @@
 # LifeLoop
 
-You can find some implementation examples in the [examples](./examples/) folder. The main application can be found under [lifeloop](./lifeloop). You can see a preview at [https://riccap.github.io/projectz/](https://riccap.github.io/projectz/).
+You can see a preview of the application at [https://riccap.github.io/projectz/](https://riccap.github.io/projectz/).
 
 ## Resources
 
