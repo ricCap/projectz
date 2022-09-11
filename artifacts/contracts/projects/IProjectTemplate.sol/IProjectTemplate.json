@@ -1,7 +1,7 @@
 {
   "_format": "hh-sol-artifact-1",
-  "contractName": "ProjectTemplateI",
-  "sourceName": "contracts/ProjectTemplateInterface.sol",
+  "contractName": "IProjectTemplate",
+  "sourceName": "contracts/projects/IProjectTemplate.sol",
   "abi": [
     {
       "inputs": [],

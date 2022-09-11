@@ -43,4 +43,6 @@ describe("Manager", function () {
       .to.emit(contract, "ProjectMinted")
       .withArgs(0, 1);
   });
+
+  // add template does not implement erc721 or iprojecttemplate
 });
