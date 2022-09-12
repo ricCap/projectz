@@ -2,9 +2,10 @@ arrowParens: avoid
 bracketSpacing: true
 endOfLine: auto
 printWidth: 120
-singleQuote: false
+singleQuote: true
 tabWidth: 2
 trailingComma: all
+semi: false
 
 overrides:
   - files: "*.sol"

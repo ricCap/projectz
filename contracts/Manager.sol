@@ -8,9 +8,6 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
 import "./projects/IProjectTemplate.sol";
 
-/**
- * @dev
- */
 contract Manager is AccessControl, IERC721Receiver {
     // roles
     bytes32 public constant PARTNER_ROLE = keccak256("PARTNER_ROLE");
@@ -45,7 +42,7 @@ contract Manager is AccessControl, IERC721Receiver {
         } else if (hasRole(PARTNER_ROLE, msg.sender)) {
             return "PARTNER_ROLE";
         } else {
-            return "UNKOWN_ROLE";
+            return "UNKNOWN_ROLE";
         }
     }
 
