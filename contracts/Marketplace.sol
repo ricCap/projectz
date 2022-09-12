@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity >=0.8.4 <0.9.0;
+pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract Marketplace {
     uint256 internal productsLength = 0;
-    address internal cUsdTokenAddress =
-        0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1;
+    address internal cUsdTokenAddress = 0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1;
 
     struct Product {
         address payable owner;
@@ -29,15 +28,7 @@ contract Marketplace {
         uint256 _price
     ) public {
         uint256 _sold = 0;
-        products[productsLength] = Product(
-            payable(msg.sender),
-            _name,
-            _image,
-            _description,
-            _location,
-            _price,
-            _sold
-        );
+        products[productsLength] = Product(payable(msg.sender), _name, _image, _description, _location, _price, _sold);
         productsLength++;
     }
 
@@ -67,11 +58,7 @@ contract Marketplace {
 
     function buyProduct(uint256 _index) public payable {
         require(
-            IERC20(cUsdTokenAddress).transferFrom(
-                msg.sender,
-                products[_index].owner,
-                products[_index].price
-            ),
+            IERC20(cUsdTokenAddress).transferFrom(msg.sender, products[_index].owner, products[_index].price),
             "Transfer failed."
         );
         products[_index].sold++;
