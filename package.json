@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^1.0.2",
-    "@types/node": "^16.0.8",
+    "@types/node": "^18.7.17",
     "@types/node-polyglot": "^2.4.2",
     "@walletconnect/web3-provider": "^1.8.0",
     "autoprefixer": "^10.4.9",
