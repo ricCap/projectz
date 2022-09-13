@@ -41,7 +41,7 @@ const WalletsDropdown = (props: INavbarProps) => {
           <li>
             <button
               onClick={() => connectWalletConnect(props)}
-              class="block py-2 px-4  hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+              class="block py-2 px-4 w-full hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
             >
               {props.locale().t('navbar.button-connect-wallet-connect')}
             </button>
@@ -49,7 +49,7 @@ const WalletsDropdown = (props: INavbarProps) => {
           <li>
             <button
               onClick={() => connectCeloWallet(props)}
-              class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+              class="block py-2 px-4 w-full hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
             >
               {props.locale().t('navbar.button-connect-extension')}
             </button>
