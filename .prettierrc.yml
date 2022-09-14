@@ -2,18 +2,21 @@ arrowParens: avoid
 bracketSpacing: true
 endOfLine: auto
 printWidth: 120
-singleQuote: false
+singleQuote: true
 tabWidth: 2
 trailingComma: all
+semi: false
 
 overrides:
-  - files: "*.sol"
+  - files: '*.sol'
     options:
-      compiler: "0.8.15"
+      compiler: '0.8.15'
       tabWidth: 4
-  - files: "*.ts"
+      singleQuote: false
+      semi: true
+  - files: '*.ts'
     options:
-      importOrder: ["<THIRD_PARTY_MODULES>", "^[./]"]
-      importOrderParserPlugins: ["typescript"]
+      importOrder: ['<THIRD_PARTY_MODULES>', '^[./]']
+      importOrderParserPlugins: ['typescript']
       importOrderSeparation: true
       importOrderSortSpecifiers: true
