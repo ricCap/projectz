@@ -1,5 +1,5 @@
 import Polyglot from 'node-polyglot'
-import { Accessor, JSXElement, Setter, Show, Signal } from 'solid-js'
+import { Accessor, JSXElement, mergeProps, Setter, Show, Signal } from 'solid-js'
 
 import { AbiItem } from 'web3-utils'
 import * as contractkit from '@celo/contractkit'
@@ -13,6 +13,7 @@ import managerABI from '../../artifacts/contracts/Manager.sol/Manager.json'
 
 export let kit: contractkit.ContractKit
 export let managerContract: Contract
+export let exampleTemplateContract: Contract
 
 /** Global interface required to interact with window.celo */
 declare global {
@@ -69,7 +70,7 @@ export default function Navbar(props: INavbarProps): JSXElement {
           when={props.connected()}
           fallback={
             <>
-              <WalletsDropdown {...props}></WalletsDropdown>
+              <WalletsDropdown {...mergeProps(props)}></WalletsDropdown>
             </>
           }
         >
@@ -159,7 +160,11 @@ async function _connect(props: INavbarProps, web3: Web3) {
   const accounts = await kit.web3.eth.getAccounts()
   kit.defaultAccount = accounts[0]
 
-  managerContract = new kit.web3.eth.Contract(managerABI.abi as unknown as AbiItem, constants.ManagerContractAddress)
+  managerContract = new kit.web3.eth.Contract(managerABI.abi as AbiItem[], constants.ManagerContractAddress)
+  exampleTemplateContract = new kit.web3.eth.Contract(
+    managerABI.abi as AbiItem[],
+    constants.ExampleProjectTemplateAddress,
+  )
   props.setConnected(true)
   props.setMessage(`Connected: ${kit.defaultAccount}`)
 }

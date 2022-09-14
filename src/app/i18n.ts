@@ -2,6 +2,7 @@ import Polyglot from 'node-polyglot'
 
 const englishPhrases = {
   welcome: 'Welcome to LifeLoop',
+  info: 'Where you can make the difference!',
   navbar: {
     'button-connect': 'Connect',
     'button-connect-extension': 'with browser extension',
@@ -9,16 +10,27 @@ const englishPhrases = {
     'button-disconnect': 'Disconnect',
     'button-switch-language': 'Switch to Italian',
   },
+  body: {
+    templates: {
+      'button-create-project': 'Create project',
+    },
+  },
 }
 
 const italianPhrases = {
   welcome: 'Benvenuto in LifeLoop',
+  info: 'Dove tu puoi fare la differenza!',
   navbar: {
     'button-connect': 'Collega Portafoglio',
     'button-connect-extension': 'con estensione chrome',
     'button-connect-wallet-connect': 'con wallet connect',
     'button-disconnect': 'Scollega Portafoglio',
     'button-switch-language': 'Switch to English',
+  },
+  body: {
+    templates: {
+      'button-create-project': 'Crea progetto',
+    },
   },
 }
 
