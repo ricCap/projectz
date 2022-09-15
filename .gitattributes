@@ -1,2 +1,4 @@
 artifacts/** linguist-generated=true
 dist/** linguist-generated=true
+src/types/** linguist-generated=true
+dist/** linguist-generated=true

@@ -41,7 +41,7 @@ export const ProjectTemplate: Component<ProjectTemplateProps> = props => {
   return (
     <div class="p-4 m-4 text-bold text-center bg-blue-100">
       <div class="grid grid-1">
-        <p class="p-1">Project</p>
+        <p class="p-1">Template</p>
         <button type="button" class="bg-blue-800 hover:bg-blue-900 text-white font-bold py-2 px-4 content-end w-auto">
           {props.locale().t('body.templates.button-create-project')}
         </button>

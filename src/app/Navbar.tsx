@@ -4,16 +4,17 @@ import { Accessor, JSXElement, mergeProps, Setter, Show, Signal } from 'solid-js
 import { AbiItem } from 'web3-utils'
 import * as contractkit from '@celo/contractkit'
 import Web3 from '@celo/contractkit/node_modules/web3'
-import { Contract } from '@celo/contractkit/node_modules/web3-eth-contract'
 import WalletConnectProvider from '@walletconnect/web3-provider'
 
 import { getI18N } from './i18n'
 import * as constants from './constants'
 import managerABI from '../../artifacts/contracts/Manager.sol/Manager.json'
+import { Manager } from '../types/contracts/Manager'
+import { ExampleProjectTemplate } from '../types/contracts/projects'
 
 export let kit: contractkit.ContractKit
-export let managerContract: Contract
-export let exampleTemplateContract: Contract
+export let managerContract: Manager
+export let exampleTemplateContract: ExampleProjectTemplate
 
 /** Global interface required to interact with window.celo */
 declare global {
@@ -160,11 +161,14 @@ async function _connect(props: INavbarProps, web3: Web3) {
   const accounts = await kit.web3.eth.getAccounts()
   kit.defaultAccount = accounts[0]
 
-  managerContract = new kit.web3.eth.Contract(managerABI.abi as AbiItem[], constants.ManagerContractAddress)
+  managerContract = new kit.web3.eth.Contract(
+    managerABI.abi as AbiItem[],
+    constants.addresses.Manager,
+  ) as unknown as Manager
   exampleTemplateContract = new kit.web3.eth.Contract(
     managerABI.abi as AbiItem[],
-    constants.ExampleProjectTemplateAddress,
-  )
+    constants.addresses.ExampleProjectTemplate,
+  ) as unknown as ExampleProjectTemplate
   props.setConnected(true)
   props.setMessage(`Connected: ${kit.defaultAccount}`)
 }

@@ -1,4 +1,10 @@
 import { ethers } from 'hardhat'
+import * as fs from 'fs'
+
+export type DeployedAddresses = {
+  Manager: string
+  ExampleProjectTemplate: string
+}
 
 async function main() {
   const managerFactory = await ethers.getContractFactory('Manager')
@@ -11,6 +17,14 @@ async function main() {
   await exampleProjectTemplateContract.transferOwnership(managerContract.address)
   await managerContract.addProjectTemplate(exampleProjectTemplateContract.address)
   console.log(`Example template deployed to ${exampleProjectTemplateContract.address} and added to manager`)
+
+  // Store addresses into a file the app can use
+  const addresses: DeployedAddresses = {
+    Manager: managerContract.address,
+    ExampleProjectTemplate: exampleProjectTemplateContract.address,
+  }
+
+  fs.writeFileSync('./src/addresses.json', JSON.stringify(addresses, null, 2), 'utf8')
 }
 
 // We recommend this pattern to be able to use async/await everywhere
