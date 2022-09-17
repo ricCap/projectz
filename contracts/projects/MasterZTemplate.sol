@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.9;
 
+import "../paymentSplitters/PartnerPaymentsSplitter.sol";
 import "./IProjectTemplate.sol";
 import "./DefaultProject.sol";
 import "hardhat/console.sol";
@@ -14,6 +15,7 @@ contract MasterZTemplate is DefaultProject {
 
     // enums
     enum CheckpointState {
+        WaitingInitialization,
         WaitingToStart,
         InProgress,
         Finished
@@ -66,20 +68,21 @@ contract MasterZTemplate is DefaultProject {
     constructor(address _partecipantAddress, uint256 _fundingDurationInDays) {
         // define addresses
         // TODO: create an address book contract
-        partnerAddressBook[0] = address(0x00000);
-        partnerAddressBook[1] = address(0x11111);
-        partnerAddressBook[2] = address(0x22222);
+        partnerAddressBook[0] = address(0x11111);
+        partnerAddressBook[1] = address(0x22222);
+        partnerAddressBook[2] = address(0x33333);
 
         // define all checkpoints
-        checkpoints.push(Checkpoint(CheckpointState.WaitingToStart, "Pass 80% of courses.", 1, 0));
-        checkpoints.push(Checkpoint(CheckpointState.WaitingToStart, "Complete project-work.", 2, 1));
-        checkpoints.push(Checkpoint(CheckpointState.WaitingToStart, "Pass final examination.", 1, 2));
+        checkpoints.push(Checkpoint(CheckpointState.WaitingInitialization, "Follow 80% of courses.", 1, 0));
+        checkpoints.push(Checkpoint(CheckpointState.WaitingInitialization, "Complete project-work.", 2, 1));
+        checkpoints.push(Checkpoint(CheckpointState.WaitingInitialization, "Pass final examination.", 1, 2));
 
         // add other variables
-        info = "Re-evaluate a person x doing y";
+        info = "Re-evaluate a person x by completing masterZ";
         partecipant = _partecipantAddress;
 
         // set hardCap
+        // TODO: add buffer fees
         for (uint256 i = 0; i < checkpoints.length; i++) {
             hardCap.add(checkpoints[i].cost);
         }
@@ -90,9 +93,9 @@ contract MasterZTemplate is DefaultProject {
 
     /**
      *  Receive funds
-     *  // TODO: buffer fee
+     *  // TODO: add buffer fee
      */
-    function donate(uint256 _amount) external payable onlyState(ProjectState.Fundraising) {
+    function donate(uint256 _amount) external onlyState(ProjectState.Fundraising) {
         // TODO: check https://blog.openzeppelin.com/reentrancy-after-istanbul/
         require(cUsdToken.transferFrom(msg.sender, address(this), _amount), "Donation Failed");
 
@@ -134,7 +137,7 @@ contract MasterZTemplate is DefaultProject {
 
         // activate first checkpoint
         activeCheckpoint = 0;
-        startCheckPoint(activeCheckpoint);
+        initializeCheckPoint(activeCheckpoint);
     }
 
     /**
@@ -150,19 +153,39 @@ contract MasterZTemplate is DefaultProject {
             console.log("Project finished succesfully!", msg.sender);
             projectState = ProjectState.Finished;
         } else {
-            startCheckPoint(activeCheckpoint);
+            initializeCheckPoint(activeCheckpoint);
         }
     }
 
     /**
-     *  Start specified checkpoint
+     *  Set checkpoint as ready to get a pull payment request
      */
-    function startCheckPoint(uint256 _index) internal onlyState(ProjectState.InProgress) {
+    function initializeCheckPoint(uint256 _index) internal onlyState(ProjectState.InProgress) {
+        require(
+            checkpoints[_index].state == CheckpointState.WaitingInitialization,
+            "Checkpoint not in the correct state"
+        );
+        checkpoints[_index].state = CheckpointState.WaitingToStart;
+    }
+
+    /**
+     *  Start specified checkpoint with pull payment request
+     */
+    function startCheckPoint(uint256 _index) public onlyState(ProjectState.InProgress) {
+        // check correct checkpoint
+        require(checkpoints[_index].state == CheckpointState.WaitingToStart, "Checkpoint not ready to start");
+
+        // check partner address
         address payable _partnerAddress = payable(_getAddress(checkpoints[_index].partnerID));
+        require(_partnerAddress == msg.sender || msg.sender == this.owner(), "Sender is not due any payment.");
+
+        // If I am the partner, or the owner of the contract, I can start the project and activate the payment
         require(
             cUsdToken.transferFrom(address(this), _partnerAddress, checkpoints[_index].cost),
             "Payment has failed."
         );
+
+        // emit a partner paid event
         emit PartnerPaid(_partnerAddress, _index);
         checkpoints[_index].state = CheckpointState.InProgress;
     }
