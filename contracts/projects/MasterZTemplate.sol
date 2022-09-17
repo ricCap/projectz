@@ -8,20 +8,15 @@ import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-/** @dev Default project template */
+/** @dev Default project template for masterZ */
 contract MasterZTemplate is DefaultProject {
     using SafeMath for uint256;
 
     // enums
     enum CheckpointState {
         WaitingToStart,
-        Started,
+        InProgress,
         Finished
-    }
-    enum FundraisingState {
-        Active,
-        Expired,
-        Successful
     }
     enum ProjectState {
         Fundraising,
@@ -33,14 +28,14 @@ contract MasterZTemplate is DefaultProject {
 
     /////// variables ///////
     ProjectState public projectState = ProjectState.Fundraising;
-    address internal cUsdTokenAddress = 0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1;
+    IERC20 internal cUsdToken = IERC20(0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1);
     address internal partecipant;
     string public info;
-    uint256 public currentBalance = 0;
     uint256 public hardCap;
+    uint256 public deadline;
 
     // TODO: create a real address book contract
-    mapping(uint256 => address) internal addressBook;
+    mapping(uint256 => address) internal partnerAddressBook;
     mapping(address => uint256) public contributions;
 
     // checkpoints
@@ -54,26 +49,31 @@ contract MasterZTemplate is DefaultProject {
     uint256 public activeCheckpoint;
 
     /////// modifiers ///////
-    modifier getState(ProjectState _state) {
+    modifier onlyState(ProjectState _state) {
         require(projectState == _state, "You can not call this function with the current project state.");
         _;
     }
 
+    /////// Events ////////
+    event ReceivedFunding(address contributor, uint256 amount, uint256 currentTotal);
+    event CheckointPassed(uint256 checkpointID);
+    event PartnerPaid(address partner, uint256 checkpointID);
+
     /**
-        Contract constructor. 
-        Defines all the checkpoints that this contract must contains.
-    */
-    constructor(address _partecipantAddress) {
+     *  Contract constructor.
+     *  Defines all the checkpoints that this contract must contains.
+     */
+    constructor(address _partecipantAddress, uint256 _fundingDurationInDays) {
         // define addresses
         // TODO: create an address book contract
-        addressBook[0] = address(0x0000);
-        addressBook[1] = address(0x0000);
-        addressBook[2] = address(0x0000);
+        partnerAddressBook[0] = address(0x00000);
+        partnerAddressBook[1] = address(0x11111);
+        partnerAddressBook[2] = address(0x22222);
 
         // define all checkpoints
-        checkpoints.push(Checkpoint(CheckpointState.WaitingToStart, "Go to psychologists.", 1, 0));
-        checkpoints.push(Checkpoint(CheckpointState.WaitingToStart, "Attend course.", 2, 1));
-        checkpoints.push(Checkpoint(CheckpointState.WaitingToStart, "Take the exam.", 1, 2));
+        checkpoints.push(Checkpoint(CheckpointState.WaitingToStart, "Pass 80% of courses.", 1, 0));
+        checkpoints.push(Checkpoint(CheckpointState.WaitingToStart, "Complete project-work.", 2, 1));
+        checkpoints.push(Checkpoint(CheckpointState.WaitingToStart, "Pass final examination.", 1, 2));
 
         // add other variables
         info = "Re-evaluate a person x doing y";
@@ -83,88 +83,98 @@ contract MasterZTemplate is DefaultProject {
         for (uint256 i = 0; i < checkpoints.length; i++) {
             hardCap.add(checkpoints[i].cost);
         }
+
+        // Set Fundraising deadline
+        deadline = block.timestamp.add(_fundingDurationInDays.mul(1 days));
     }
 
     /**
-        Receive funds
-        // TODO: buffer fee
-        // TODO: add expiration time (?)
-    */
-    function donate(uint256 _amount) external payable getState(ProjectState.Fundraising) {
-        IERC20(cUsdTokenAddress).transferFrom(msg.sender, address(this), _amount);
+     *  Receive funds
+     *  // TODO: buffer fee
+     */
+    function donate(uint256 _amount) external payable onlyState(ProjectState.Fundraising) {
+        // TODO: check https://blog.openzeppelin.com/reentrancy-after-istanbul/
+        require(cUsdToken.transferFrom(msg.sender, address(this), _amount), "Donation Failed");
 
+        // save contribution
         contributions[msg.sender] = contributions[msg.sender].add(_amount);
-        currentBalance.add(_amount);
+        emit ReceivedFunding(msg.sender, _amount, cUsdToken.balanceOf(address(this)));
 
         // check hardcap
-        if (checkHardCap()) {
+        checkIfHardCapReached();
+        if (projectState != ProjectState.WaitingStart) {
+            checkIfFundingExpired();
+        }
+    }
+
+    /**
+     *  Check if HardCap has been reached
+     */
+    function checkIfHardCapReached() public {
+        if (cUsdToken.balanceOf(address(this)) >= hardCap) {
             projectState = ProjectState.WaitingStart;
         }
     }
 
     /**
-     * Check if HardCap has been reached
+     *  Check if funding has expired
      */
-    function checkHardCap() public view returns (bool) {
-        if (currentBalance >= hardCap) {
-            return true;
-        } else {
-            return false;
+    function checkIfFundingExpired() public {
+        if (block.timestamp > deadline) {
+            abortProject();
         }
     }
 
     /**
-        Initialize project
-    */
-    function startProject() public payable onlyOwner getState(ProjectState.WaitingStart) {
-        // activate first checkpoint
-        address payable _partnerAddress = payable(_getAddress(checkpoints[0].partnerID));
-        require(
-            IERC20(cUsdTokenAddress).transferFrom(address(this), _partnerAddress, checkpoints[0].cost),
-            "First checkpoint payment Failed."
-        );
-        checkpoints[0].state = CheckpointState.Started;
-        activeCheckpoint = 0;
-
+     *  Start project once fundraising has finished
+     */
+    function startProject() public onlyOwner onlyState(ProjectState.WaitingStart) {
         // start project
         projectState = ProjectState.InProgress;
+
+        // activate first checkpoint
+        activeCheckpoint = 0;
+        startCheckPoint(activeCheckpoint);
     }
 
     /**
-        Set a checkpoint as finished and start the next one.
-    */
-    function approveCheckpoint() public payable onlyOwner getState(ProjectState.InProgress) {
+     *  Set a checkpoint as finished and start the next one.
+     */
+    function finishCheckpoint() public onlyOwner onlyState(ProjectState.InProgress) {
         // approve current checkpoint
         checkpoints[activeCheckpoint].state = CheckpointState.Finished;
 
-        // activate next one
+        // activate next checkpoint
         activeCheckpoint++;
         if (activeCheckpoint == checkpoints.length) {
             console.log("Project finished succesfully!", msg.sender);
             projectState = ProjectState.Finished;
         } else {
-            // pay for next checkpoint
-            address payable _partnerAddress = payable(_getAddress(checkpoints[activeCheckpoint].partnerID));
-            require(
-                IERC20(cUsdTokenAddress).transferFrom(
-                    address(this),
-                    _partnerAddress,
-                    checkpoints[activeCheckpoint].cost
-                ),
-                "Payment has failed."
-            );
-            checkpoints[activeCheckpoint].state = CheckpointState.Started;
+            startCheckPoint(activeCheckpoint);
         }
     }
 
-    function abortProject() public payable onlyOwner {
+    /**
+     *  Start specified checkpoint
+     */
+    function startCheckPoint(uint256 _index) internal onlyState(ProjectState.InProgress) {
+        address payable _partnerAddress = payable(_getAddress(checkpoints[_index].partnerID));
+        require(
+            cUsdToken.transferFrom(address(this), _partnerAddress, checkpoints[_index].cost),
+            "Payment has failed."
+        );
+        emit PartnerPaid(_partnerAddress, _index);
+        checkpoints[_index].state = CheckpointState.InProgress;
+    }
+
+    function abortProject() public onlyOwner {
         // TODO: return funds
         projectState = ProjectState.Aborted;
     }
 
     /**
-        Getter functions
-    */
+     *  Getter functions
+     */
     function getCurrentCheckpoint() public view returns (Checkpoint memory) {
         return checkpoints[activeCheckpoint];
     }
@@ -174,10 +184,14 @@ contract MasterZTemplate is DefaultProject {
     }
 
     function getBalance() public view returns (uint256) {
-        return address(this).balance;
+        return cUsdToken.balanceOf(address(this));
+    }
+
+    function getProjectStatus() public view returns (ProjectState) {
+        return projectState;
     }
 
     function _getAddress(uint256 _index) internal view returns (address) {
-        return addressBook[_index];
+        return partnerAddressBook[_index];
     }
 }
