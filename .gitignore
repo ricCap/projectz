@@ -4,6 +4,9 @@ coverage
 coverage.json
 typechain
 typechain-types
+src/types
+artifacts
+test/gas.txt
 
 #Hardhat files
 cache

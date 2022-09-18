@@ -15,14 +15,16 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v3
         with:
-          node-version: "16"
+          node-version: '16'
 
       - name: Install Dependencies
+        env:
+          MNEMONIC: 'fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake'
         run: npm ci
 
       - name: Run hardhat Test
         env:
-          MNEMONIC: "fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake"
+          MNEMONIC: 'fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake fake'
         run: npm run all
 
       # - name: Check diff

@@ -1,48 +1,104 @@
-import { expect } from "chai";
-import { ethers } from "hardhat";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import "@nomiclabs/hardhat-ethers";
+import { expect } from 'chai'
+import { ethers } from 'hardhat'
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
+import '@nomiclabs/hardhat-ethers'
 
-import { Manager } from "../typechain-types/contracts/Manager";
-import { DefaultProject } from "../typechain-types/contracts/DefaultProject";
+import IProjectTemplateABI from '../artifacts/contracts/projects/IProjectTemplate.sol/IProjectTemplate.json'
+import IExampleProjectTemplateABI from '../artifacts/contracts/projects/ExampleProjectTemplate.sol/ExampleProjectTemplate.json'
 
-describe("Manager", function () {
-  this.timeout(50000);
+import { IProjectTemplate } from '../typechain-types'
+import { Manager } from '../typechain-types/Manager'
+import { ExampleProjectTemplate, IExampleProjectTemplate } from '../typechain-types/projects/ExampleProjectTemplate.sol'
+import { ProjectStruct } from '../typechain-types/projects/ExampleProjectTemplate.sol/IExampleProjectTemplate'
 
-  let contract: Manager;
-  let defaultProjectContract: DefaultProject;
-  let owner: SignerWithAddress;
+describe('Manager', function () {
+  this.timeout(50000)
+
+  let managerContract: Manager
+  let exampleProjectTemplateContract: ExampleProjectTemplate
+  let exampleProjectTemplateContract2: ExampleProjectTemplate
+  let owner: SignerWithAddress
+  let addr1: SignerWithAddress
+  let addr2: SignerWithAddress
 
   this.beforeEach(async function () {
-    const managerFactory = await ethers.getContractFactory("Manager");
-    contract = (await managerFactory.deploy()) as Manager;
-    await contract.deployed();
-    owner = (await ethers.getSigners())[0];
+    // deploy manager
+    const managerFactory = await ethers.getContractFactory('Manager')
+    managerContract = (await managerFactory.deploy()) as Manager
+    await managerContract.deployed()
+    ;[owner, addr1, addr2] = await ethers.getSigners()
 
-    const defaultProjectFactory = await ethers.getContractFactory(
-      "DefaultProject"
-    );
-    defaultProjectContract =
-      (await defaultProjectFactory.deploy()) as DefaultProject;
-    await defaultProjectContract.deployed();
-    await defaultProjectContract.transferOwnership(contract.address);
-  });
+    // deploy template 1
+    const exampleProjectTemplateFactory = await ethers.getContractFactory('ExampleProjectTemplate')
+    exampleProjectTemplateContract = (await exampleProjectTemplateFactory.deploy()) as ExampleProjectTemplate
+    await exampleProjectTemplateContract.deployed()
+    // deploy template 2
+    exampleProjectTemplateContract2 = (await exampleProjectTemplateFactory.deploy()) as ExampleProjectTemplate
+    await exampleProjectTemplateContract2.deployed()
 
-  it("Contract creator should have admin role", async function () {
-    expect(ethers.utils.parseBytes32String(await contract.getRole())).to.equal(
-      "DEFAULT_ADMIN_ROLE"
-    );
-  });
+    // transfer ownership of template to manager
+    await (await exampleProjectTemplateContract.transferOwnership(managerContract.address)).wait()
+  })
 
-  it("Manager contract adds project template and mints nft", async function () {
-    await contract.addProjectTemplate(defaultProjectContract.address);
-    expect(await (await contract.createProject(0)).wait())
-      .to.emit(contract, "ProjectMinted")
-      .withArgs(0, 0);
-    expect(await contract.createProject(0))
-      .to.emit(contract, "ProjectMinted")
-      .withArgs(0, 1);
-  });
+  it('should grant contract deployer DEFAULT_ADMIN_ROLE role', async function () {
+    const defaultAdminRole = await managerContract.DEFAULT_ADMIN_ROLE()
+    expect(await managerContract.hasRole(defaultAdminRole, owner.address)).to.equal(true)
+  })
 
-  // add template does not implement erc721 or iprojecttemplate
-});
+  it('should allow DEFAULT_ADMIN to add project template', async () => {
+    expect(await (await managerContract.addProjectTemplate(exampleProjectTemplateContract.address)).wait())
+      .to.emit(managerContract, 'ProjectTemplateAdded')
+      .withArgs(exampleProjectTemplateContract.address, 0)
+  })
+
+  it('should list templates', async function () {
+    await (await managerContract.addProjectTemplate(exampleProjectTemplateContract.address)).wait()
+    await (await managerContract.addProjectTemplate(exampleProjectTemplateContract2.address)).wait()
+    expect(await managerContract.listProjectTemplates()).to.deep.equal([
+      exampleProjectTemplateContract.address,
+      exampleProjectTemplateContract2.address,
+    ])
+  })
+
+  it('can create ExampleProject from template', async function () {
+    await (await managerContract.addProjectTemplate(exampleProjectTemplateContract.address)).wait()
+
+    // Check the template was added correctly
+    const templates = await managerContract.listProjectTemplates()
+    expect(templates.length === 1, 'more templates then the expected 1 were found')
+    expect(templates[0]).to.equal(
+      exampleProjectTemplateContract.address,
+      'deployed template differs from expected exampleProjectTemplate',
+    )
+
+    // TODO Check the template implements the correct interfaces
+    const contractAsIProjectTemplate = new ethers.Contract(
+      exampleProjectTemplateContract.address,
+      IProjectTemplateABI.abi,
+    ) as IProjectTemplate
+    const contractAsExampleProjectTemplate = new ethers.Contract(
+      exampleProjectTemplateContract.address,
+      IExampleProjectTemplateABI.abi,
+    ) as ExampleProjectTemplate
+
+    // Test creating a project
+    const project: ProjectStruct = {
+      title: 'Project for Gigi',
+      description: 'Help Gigi start anew',
+    }
+
+    await (
+      await contractAsExampleProjectTemplate.connect(owner)['safeMint((string,string))'](project, { gasLimit: 1000000 })
+    ).wait()
+
+    const projects = await contractAsExampleProjectTemplate.connect(owner).listProjects()
+    expect(
+      projects.map(projectStructOutput => {
+        return {
+          title: projectStructOutput[0],
+          description: projectStructOutput[1],
+        }
+      }),
+    ).to.deep.equal([project])
+  })
+})
