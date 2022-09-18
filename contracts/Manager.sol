@@ -57,6 +57,14 @@ contract Manager is AccessControl, IERC721Receiver {
         emit ProjectMinted(_templateIndex, _index);
     }
 
+    function listProjectTemplates() public view onlyRole(DEFAULT_ADMIN_ROLE) returns (address[] memory) {
+        address[] memory templates = new address[](projectTemplatesLength);
+        for (uint256 i = 0; i < projectTemplatesLength; i++) {
+            templates[i] = projectTemplateIDToAddress[i];
+        }
+        return templates;
+    }
+
     /* solhint-disable */
     function onERC721Received(
         address operator,

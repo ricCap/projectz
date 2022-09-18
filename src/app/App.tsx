@@ -1,24 +1,39 @@
-import { Component, createSignal, createResource } from 'solid-js'
+import { Component, createSignal, createResource, Accessor, Setter } from 'solid-js'
 import Navbar from './Navbar'
 
 import { getI18N } from './i18n'
 import url from './assets/infinity.svg'
 import DebugBox from './DebugBox'
+import { TemplatesTable } from './projects/ProjectTemplate'
+import Polyglot from 'node-polyglot'
 
 /** Various signals that should be passed down to other components */
 const [message, setMessage] = createSignal('Started')
 const [connected, setConnected] = createSignal(false)
 const [locale, setLocale] = createSignal(getI18N('en'))
 
+export interface ConnectionPros {
+  connected: Accessor<boolean>
+  setConnected: Setter<boolean>
+  locale: Accessor<Polyglot>
+  setLocale: Setter<Polyglot>
+}
+
 const Title = () => {
   return (
-    <div class="flex flex-row justify-center items-center">
-      <div class="">
-        <img src={url} class="box-border h-32 w-32 ml-5" />
+    <div class="grid grid-1 bg-sky-100 border-b border-blue-100">
+      <div class="flex flex-row justify-center items-center border-b border-blue-200">
+        <div class="">
+          <img src={url} class="box-border h-32 w-32 ml-5" />
+        </div>
+        <div class="font-bold text-center text-5xl p-5">{locale().t('welcome')}</div>
+        <div class="">
+          <img src={url} class="box-border h-32 w-32 mr-5" />
+        </div>
       </div>
-      <div class="font-bold text-center text-5xl p-5">{locale().t('welcome')}</div>
-      <div class="">
-        <img src={url} class="box-border h-32 w-32 mr-5" />
+
+      <div class="p-5 text-center">
+        <p class="text-l">{locale().t('info')}</p>
       </div>
     </div>
   )
@@ -53,6 +68,12 @@ const App: Component = () => {
           />
           <main class="mb-auto">
             <Title></Title>
+            <TemplatesTable
+              connected={connected}
+              setConnected={setConnected}
+              locale={locale}
+              setLocale={setLocale}
+            ></TemplatesTable>
             <DebugBox
               connected={connected}
               setConnected={setConnected}
