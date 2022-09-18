@@ -3,14 +3,20 @@ import { ethers } from 'hardhat'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import '@nomiclabs/hardhat-ethers'
 
-import { Manager } from '../typechain-types/contracts/Manager'
-import { ExampleProjectTemplate } from '../typechain-types/contracts/projects/ExampleProjectTemplate'
+import IProjectTemplateABI from '../artifacts/contracts/projects/IProjectTemplate.sol/IProjectTemplate.json'
+import IExampleProjectTemplateABI from '../artifacts/contracts/projects/ExampleProjectTemplate.sol/ExampleProjectTemplate.json'
+
+import { IProjectTemplate } from '../typechain-types'
+import { Manager } from '../typechain-types/Manager'
+import { ExampleProjectTemplate, IExampleProjectTemplate } from '../typechain-types/projects/ExampleProjectTemplate.sol'
+import { ProjectStruct } from '../typechain-types/projects/ExampleProjectTemplate.sol/IExampleProjectTemplate'
 
 describe('Manager', function () {
   this.timeout(50000)
 
   let managerContract: Manager
   let exampleProjectTemplateContract: ExampleProjectTemplate
+  let exampleProjectTemplateContract2: ExampleProjectTemplate
   let owner: SignerWithAddress
   let addr1: SignerWithAddress
   let addr2: SignerWithAddress
@@ -22,21 +28,21 @@ describe('Manager', function () {
     await managerContract.deployed()
     ;[owner, addr1, addr2] = await ethers.getSigners()
 
-    // deploy template
+    // deploy template 1
     const exampleProjectTemplateFactory = await ethers.getContractFactory('ExampleProjectTemplate')
     exampleProjectTemplateContract = (await exampleProjectTemplateFactory.deploy()) as ExampleProjectTemplate
     await exampleProjectTemplateContract.deployed()
+    // deploy template 2
+    exampleProjectTemplateContract2 = (await exampleProjectTemplateFactory.deploy()) as ExampleProjectTemplate
+    await exampleProjectTemplateContract2.deployed()
 
     // transfer ownership of template to manager
-    await exampleProjectTemplateContract.transferOwnership(managerContract.address)
+    await (await exampleProjectTemplateContract.transferOwnership(managerContract.address)).wait()
   })
 
   it('should grant contract deployer DEFAULT_ADMIN_ROLE role', async function () {
-    expect(ethers.utils.parseBytes32String(await managerContract.getRole())).to.equal('DEFAULT_ADMIN_ROLE')
-  })
-
-  it('should match unkown user with UNKNOWN_ROLE', async function () {
-    expect(ethers.utils.parseBytes32String(await managerContract.connect(addr1).getRole())).to.equal('UNKNOWN_ROLE')
+    const defaultAdminRole = await managerContract.DEFAULT_ADMIN_ROLE()
+    expect(await managerContract.hasRole(defaultAdminRole, owner.address)).to.equal(true)
   })
 
   it('should allow DEFAULT_ADMIN to add project template', async () => {
@@ -45,24 +51,54 @@ describe('Manager', function () {
       .withArgs(exampleProjectTemplateContract.address, 0)
   })
 
-  it('should allow DEFAULT_ADMIN to mint project from previously-added template', async function () {
-    await managerContract.addProjectTemplate(exampleProjectTemplateContract.address)
-    expect(await (await managerContract.createProject(0)).wait())
-      .to.emit(managerContract, 'ProjectMinted')
-      .withArgs(0, 0)
-    expect(await managerContract.createProject(0))
-      .to.emit(managerContract, 'ProjectMinted')
-      .withArgs(0, 1)
-  })
-
   it('should list templates', async function () {
-    await managerContract.addProjectTemplate(exampleProjectTemplateContract.address)
-    await managerContract.addProjectTemplate(exampleProjectTemplateContract.address)
+    await (await managerContract.addProjectTemplate(exampleProjectTemplateContract.address)).wait()
+    await (await managerContract.addProjectTemplate(exampleProjectTemplateContract2.address)).wait()
     expect(await managerContract.listProjectTemplates()).to.deep.equal([
       exampleProjectTemplateContract.address,
-      exampleProjectTemplateContract.address,
+      exampleProjectTemplateContract2.address,
     ])
   })
 
-  // add template does not implement erc721 or iprojecttemplate
+  it('can create ExampleProject from template', async function () {
+    await (await managerContract.addProjectTemplate(exampleProjectTemplateContract.address)).wait()
+
+    // Check the template was added correctly
+    const templates = await managerContract.listProjectTemplates()
+    expect(templates.length === 1, 'more templates then the expected 1 were found')
+    expect(templates[0]).to.equal(
+      exampleProjectTemplateContract.address,
+      'deployed template differs from expected exampleProjectTemplate',
+    )
+
+    // TODO Check the template implements the correct interfaces
+    const contractAsIProjectTemplate = new ethers.Contract(
+      exampleProjectTemplateContract.address,
+      IProjectTemplateABI.abi,
+    ) as IProjectTemplate
+    const contractAsExampleProjectTemplate = new ethers.Contract(
+      exampleProjectTemplateContract.address,
+      IExampleProjectTemplateABI.abi,
+    ) as ExampleProjectTemplate
+
+    // Test creating a project
+    const project: ProjectStruct = {
+      title: 'Project for Gigi',
+      description: 'Help Gigi start anew',
+    }
+
+    await (
+      await contractAsExampleProjectTemplate.connect(owner)['safeMint((string,string))'](project, { gasLimit: 1000000 })
+    ).wait()
+
+    const projects = await contractAsExampleProjectTemplate.connect(owner).listProjects()
+    expect(
+      projects.map(projectStructOutput => {
+        return {
+          title: projectStructOutput[0],
+          description: projectStructOutput[1],
+        }
+      }),
+    ).to.deep.equal([project])
+  })
 })

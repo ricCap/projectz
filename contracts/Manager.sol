@@ -8,18 +8,22 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
 import "./projects/IProjectTemplate.sol";
 
+/**
+ * Manager contract that owns the other parts of the application
+ * @dev currently handles access control as well
+ */
 contract Manager is AccessControl, IERC721Receiver {
     // roles
     bytes32 public constant PARTNER_ROLE = keccak256("PARTNER_ROLE");
-    bytes32 public constant UNKOWN_ROLE = keccak256("UNKOWN_ROLE");
+    bytes32 public constant PARTICIPANT_ROLE = keccak256("PARTICIPANT_ROLE");
+    bytes32 public constant DONOR_ROLE = keccak256("DONOR_ROLE");
 
     // events
     event ProjectTemplateAdded(address _address, uint256 _index);
-    event ProjectMinted(uint256 _projectTemplateIndex, uint256 _projectIndex);
 
     // data
-    mapping(uint256 => address) internal projectTemplateIDToAddress;
-    uint256 internal projectTemplatesLength = 0;
+    uint256 private projectTemplatesLength = 0;
+    mapping(uint256 => address) private projectTemplateIDToAddress;
 
     constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -27,6 +31,7 @@ contract Manager is AccessControl, IERC721Receiver {
 
     /**
      * @dev Add a new project template
+     * @param _address the address of the template
      */
     function addProjectTemplate(address _address) public onlyRole(DEFAULT_ADMIN_ROLE) returns (uint256 _index) {
         // TODO check _address supports ERC721 interface and IProjectTemplate
@@ -35,29 +40,7 @@ contract Manager is AccessControl, IERC721Receiver {
         return projectTemplatesLength - 1;
     }
 
-    // TODO find a better way to infer roles on the client side
-    function getRole() public view returns (bytes32) {
-        if (hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
-            return "DEFAULT_ADMIN_ROLE";
-        } else if (hasRole(PARTNER_ROLE, msg.sender)) {
-            return "PARTNER_ROLE";
-        } else {
-            return "UNKNOWN_ROLE";
-        }
-    }
-
-    /** Create a preojct based on a project template
-     * @dev the project template should have been previously added to the manager
-     */
-    function createProject(uint256 _templateIndex) public onlyRole(DEFAULT_ADMIN_ROLE) returns (uint256 _index) {
-        require(_templateIndex < projectTemplatesLength, "Invalid project template index");
-        IProjectTemplate _template = IProjectTemplate(projectTemplateIDToAddress[_templateIndex]);
-
-        _index = _template.safeMint();
-        emit ProjectMinted(_templateIndex, _index);
-    }
-
-    function listProjectTemplates() public view onlyRole(DEFAULT_ADMIN_ROLE) returns (address[] memory) {
+    function listProjectTemplates() public view returns (address[] memory) {
         address[] memory templates = new address[](projectTemplatesLength);
         for (uint256 i = 0; i < projectTemplatesLength; i++) {
             templates[i] = projectTemplateIDToAddress[i];

@@ -2,6 +2,7 @@ import { HardhatUserConfig } from 'hardhat/config'
 import '@nomicfoundation/hardhat-toolbox'
 import '@nomiclabs/hardhat-ethers'
 import '@nomiclabs/hardhat-web3'
+import 'hardhat-gas-reporter'
 
 import * as dotenv from 'dotenv'
 dotenv.config()
@@ -23,6 +24,13 @@ const config: HardhatUserConfig = {
     alwaysGenerateOverloads: false,
     externalArtifacts: ['externalArtifacts/*.json'],
     dontOverrideCompile: false,
+  },
+  gasReporter: {
+    currency: 'USD',
+    gasPrice: 1,
+    enabled: true,
+    outputFile: 'test/gas.txt',
+    noColors: true,
   },
 }
 
