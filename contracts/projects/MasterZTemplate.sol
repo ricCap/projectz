@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.9;
 
-import "../paymentSplitters/PartnerPaymentsSplitter.sol";
 import "./IProjectTemplate.sol";
 import "./DefaultProject.sol";
 import "hardhat/console.sol";
@@ -22,7 +21,7 @@ contract MasterZTemplate is DefaultProject {
     }
     enum ProjectState {
         Fundraising,
-        WaitingStart,
+        WaitingToStart,
         InProgress,
         Finished,
         Aborted
@@ -31,24 +30,27 @@ contract MasterZTemplate is DefaultProject {
     /////// variables ///////
     ProjectState public projectState = ProjectState.Fundraising;
     IERC20 internal cUsdToken = IERC20(0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1);
-    address internal partecipant;
     string public info;
     uint256 public hardCap;
-    uint256 public deadline;
 
-    // TODO: create a real address book contract
-    mapping(uint256 => address) internal partnerAddressBook;
-    mapping(address => uint256) public contributions;
-
-    // checkpoints
+    // project
     struct Checkpoint {
         CheckpointState state;
         string info;
         uint256 cost;
         uint256 partnerID;
     }
-    Checkpoint[] internal checkpoints;
-    uint256 public activeCheckpoint;
+    struct Project {
+        address partecipant;
+        uint256 deadline;
+        Checkpoint[] checkpoints;
+        uint256 activeCheckpoint;
+    }
+    Project[] internal projects;
+
+    // TODO: create a real address book contract
+    mapping(uint256 => address) internal partnerAddressBook;
+    mapping(address => uint256) public contributions;
 
     /////// modifiers ///////
     modifier onlyState(ProjectState _state) {
@@ -57,8 +59,8 @@ contract MasterZTemplate is DefaultProject {
     }
 
     /////// Events ////////
-    event ReceivedFunding(address contributor, uint256 amount, uint256 currentTotal);
-    event CheckointPassed(uint256 checkpointID);
+    event FundingReceived(address contributor, uint256 amount, uint256 currentTotal);
+    event CheckpointPassed(uint256 checkpointID);
     event PartnerPaid(address partner, uint256 checkpointID);
 
     /**
@@ -84,7 +86,7 @@ contract MasterZTemplate is DefaultProject {
         // set hardCap
         // TODO: add buffer fees
         for (uint256 i = 0; i < checkpoints.length; i++) {
-            hardCap.add(checkpoints[i].cost);
+            hardCap = hardCap.add(checkpoints[i].cost);
         }
 
         // Set Fundraising deadline
@@ -95,34 +97,34 @@ contract MasterZTemplate is DefaultProject {
      *  Receive funds
      *  // TODO: add buffer fee
      */
-    function donate(uint256 _amount) external onlyState(ProjectState.Fundraising) {
+    function donate(uint256 _amount) external payable onlyState(ProjectState.Fundraising) {
         // TODO: check https://blog.openzeppelin.com/reentrancy-after-istanbul/
         require(cUsdToken.transferFrom(msg.sender, address(this), _amount), "Donation Failed");
 
         // save contribution
         contributions[msg.sender] = contributions[msg.sender].add(_amount);
-        emit ReceivedFunding(msg.sender, _amount, cUsdToken.balanceOf(address(this)));
+        emit FundingReceived(msg.sender, _amount, cUsdToken.balanceOf(address(this)));
 
         // check hardcap
-        checkIfHardCapReached();
-        if (projectState != ProjectState.WaitingStart) {
-            checkIfFundingExpired();
+        _checkIfHardCapReached();
+        if (projectState != ProjectState.WaitingToStart) {
+            _checkIfFundingExpired();
         }
     }
 
     /**
      *  Check if HardCap has been reached
      */
-    function checkIfHardCapReached() public {
+    function _checkIfHardCapReached() private {
         if (cUsdToken.balanceOf(address(this)) >= hardCap) {
-            projectState = ProjectState.WaitingStart;
+            projectState = ProjectState.WaitingToStart;
         }
     }
 
     /**
      *  Check if funding has expired
      */
-    function checkIfFundingExpired() public {
+    function _checkIfFundingExpired() private {
         if (block.timestamp > deadline) {
             abortProject();
         }
@@ -131,7 +133,7 @@ contract MasterZTemplate is DefaultProject {
     /**
      *  Start project once fundraising has finished
      */
-    function startProject() public onlyOwner onlyState(ProjectState.WaitingStart) {
+    function startProject() public onlyOwner onlyState(ProjectState.WaitingToStart) {
         // start project
         projectState = ProjectState.InProgress;
 
@@ -160,7 +162,7 @@ contract MasterZTemplate is DefaultProject {
     /**
      *  Set checkpoint as ready to get a pull payment request
      */
-    function initializeCheckPoint(uint256 _index) internal onlyState(ProjectState.InProgress) {
+    function initializeCheckPoint(uint256 _index) internal onlyOwner onlyState(ProjectState.InProgress) {
         require(
             checkpoints[_index].state == CheckpointState.WaitingInitialization,
             "Checkpoint not in the correct state"
@@ -171,7 +173,7 @@ contract MasterZTemplate is DefaultProject {
     /**
      *  Start specified checkpoint with pull payment request
      */
-    function startCheckPoint(uint256 _index) public onlyState(ProjectState.InProgress) {
+    function startCheckPoint(uint256 _index) public onlyOwner onlyState(ProjectState.InProgress) {
         // check correct checkpoint
         require(checkpoints[_index].state == CheckpointState.WaitingToStart, "Checkpoint not ready to start");
 
