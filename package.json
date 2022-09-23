@@ -33,7 +33,7 @@
     "solid-js": "1.5.4"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^1.0.2",
+    "@nomicfoundation/hardhat-toolbox": "^2.0.0",
     "@nomiclabs/hardhat-web3": "^2.0.0",
     "@typechain/ethers-v5": "^10.1.0",
     "@typechain/hardhat": "^6.1.3",
