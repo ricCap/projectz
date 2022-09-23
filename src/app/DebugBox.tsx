@@ -8,10 +8,13 @@ interface IDebugBoxProps {
 
 export default function DebugBox(props: IDebugBoxProps) {
   return (
-    <div class="mt-5">
-      <div class="bg-sky-100 m100 my-5 p-5 text-center">
-        DebugBox:
-        <h1 class="font-bold">{props.message()}</h1>
+    <div class="bg-indigo-900 text-center py-4 lg:px-4">
+      <div
+        class="p-2 bg-indigo-800 items-center text-indigo-100 leading-none lg:rounded-full flex lg:inline-flex"
+        role="alert"
+      >
+        <span class="flex rounded-full bg-indigo-500 uppercase px-2 py-1 text-xs font-bold mr-3">Debug</span>
+        <span class="font-semibold mr-2 text-left flex-auto">{props.message()}</span>
       </div>
     </div>
   )

@@ -13,6 +13,7 @@ const englishPhrases = {
   body: {
     templates: {
       'button-create-project': 'Create project',
+      'button-see-project': 'Show projects',
     },
   },
 }
@@ -30,6 +31,7 @@ const italianPhrases = {
   body: {
     templates: {
       'button-create-project': 'Crea progetto',
+      'button-see-project': 'Guarda progetti',
     },
   },
 }

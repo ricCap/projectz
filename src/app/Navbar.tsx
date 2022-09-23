@@ -1,17 +1,20 @@
 import Polyglot from 'node-polyglot'
-import { Accessor, JSXElement, mergeProps, Setter, Show, Signal } from 'solid-js'
-
+import { Accessor, createResource, JSXElement, mergeProps, Setter, Show } from 'solid-js'
 import { AbiItem } from 'web3-utils'
 import * as contractkit from '@celo/contractkit'
 import Web3 from '@celo/contractkit/node_modules/web3'
 import WalletConnectProvider from '@walletconnect/web3-provider'
 
-import { getI18N } from './i18n'
+import { getI18N } from './i18n/i18n'
 import * as constants from './constants'
-import managerABI from '../../artifacts/contracts/Manager.sol/Manager.json'
-import { Manager } from '../types/contracts/Manager'
-import { ExampleProjectTemplate } from '../types/contracts/projects'
 
+import managerABI from '../../artifacts/contracts/Manager.sol/Manager.json'
+import exampleProjectABI from '../../artifacts/contracts/projects/ExampleProjectTemplate.sol/IExampleProjectTemplate.json'
+
+import { Manager } from '../types/contracts/Manager'
+import { ExampleProjectTemplate } from '../types/contracts/projects/ExampleProjectTemplate.sol'
+
+// TODO move these to a struct or context
 export let kit: contractkit.ContractKit
 export let managerContract: Manager
 export let exampleTemplateContract: ExampleProjectTemplate
@@ -30,6 +33,27 @@ interface INavbarProps {
   setLocale: Setter<Polyglot>
   message: Accessor<string>
   setMessage: Setter<string>
+}
+
+const Balance = (props: INavbarProps) => {
+  const [balance, { refetch }] = createResource(props.connected, getBalance)
+  return (
+    <div class="bg-blue-800 hover:bg-blue-900 text-white font-bold py-2 px-4 content-end " onClick={() => refetch()}>
+      <Show when={balance.loading} fallback={<>{balance()} cUSD</>}>
+        Loading...
+      </Show>
+    </div>
+  )
+
+  async function getBalance(): Promise<string | undefined> {
+    if (!kit.defaultAccount) {
+      props.setMessage('Please connect your wallet to check your balance')
+      return
+    }
+    const totalBalance = await kit.getTotalBalance(kit.defaultAccount)
+    const cUSDBalance = totalBalance.cUSD?.shiftedBy(-constants.ERC20_DECIMALS).toFixed(2)
+    return cUSDBalance
+  }
 }
 
 const WalletsDropdown = (props: INavbarProps) => {
@@ -75,6 +99,7 @@ export default function Navbar(props: INavbarProps): JSXElement {
             </>
           }
         >
+          <Balance {...mergeProps(props)}></Balance>
           <button
             type="button"
             class="bg-blue-800 hover:bg-blue-900 text-white font-bold py-2 px-4 content-end"
@@ -106,7 +131,6 @@ export default function Navbar(props: INavbarProps): JSXElement {
           </button>
         </Show>
       </div>
-      <br></br>
     </>
   )
 }
@@ -155,6 +179,7 @@ async function connectCeloWallet(props: INavbarProps) {
   }
 }
 
+// TODO templates should be listed from the managerContract
 async function _connect(props: INavbarProps, web3: Web3) {
   kit = contractkit.newKitFromWeb3(web3)
 
@@ -166,41 +191,26 @@ async function _connect(props: INavbarProps, web3: Web3) {
     constants.addresses.Manager,
   ) as unknown as Manager
   exampleTemplateContract = new kit.web3.eth.Contract(
-    managerABI.abi as AbiItem[],
+    exampleProjectABI.abi as AbiItem[],
     constants.addresses.ExampleProjectTemplate,
   ) as unknown as ExampleProjectTemplate
   props.setConnected(true)
   props.setMessage(`Connected: ${kit.defaultAccount}`)
 }
 
+// TODO clear local cache
+// TODO remove unneccessary method calls
 async function disconnect(props: INavbarProps) {
   const provider = kit.web3.eth.currentProvider
   if (provider instanceof WalletConnectProvider) {
+    await provider.connector.killSession()
     console.log('WalletConnectProvider')
-    provider.disconnect()
+    await provider.disconnect()
+    await provider.close()
   } else if (provider?.hasOwnProperty('disconnect')) {
     kit.connection.stop()
   }
+  kit.stop()
   props.setConnected(false)
   props.setMessage('Disconnected')
-}
-
-async function getUserRole(props: INavbarProps): Promise<void> {
-  if (!managerContract) return
-  const role: string = await managerContract.methods.getRole().call()
-  props.setMessage(role)
-}
-
-async function getBalance(props: INavbarProps) {
-  if (!kit) {
-    await connectCeloWallet(props)
-  }
-
-  if (!kit.defaultAccount) {
-    props.setMessage('Please connect your wallet to check your balance')
-    return
-  }
-  const totalBalance = await kit.getTotalBalance(kit.defaultAccount)
-  const cUSDBalance = totalBalance.cUSD?.shiftedBy(-constants.ERC20_DECIMALS).toFixed(2)
-  props.setMessage(`Balance (cUSD): ${cUSDBalance}`)
 }

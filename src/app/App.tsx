@@ -1,7 +1,7 @@
 import { Component, createSignal, createResource, Accessor, Setter } from 'solid-js'
 import Navbar from './Navbar'
 
-import { getI18N } from './i18n'
+import { getI18N } from './i18n/i18n'
 import url from './assets/infinity.svg'
 import DebugBox from './DebugBox'
 import { TemplatesTable } from './projects/ProjectTemplate'
@@ -12,7 +12,9 @@ const [message, setMessage] = createSignal('Started')
 const [connected, setConnected] = createSignal(false)
 const [locale, setLocale] = createSignal(getI18N('en'))
 
-export interface ConnectionPros {
+export interface ConnectionProps {
+  message: Accessor<string>
+  setMessage: Setter<string>
   connected: Accessor<boolean>
   setConnected: Setter<boolean>
   locale: Accessor<Polyglot>
@@ -68,18 +70,20 @@ const App: Component = () => {
           />
           <main class="mb-auto">
             <Title></Title>
-            <TemplatesTable
-              connected={connected}
-              setConnected={setConnected}
-              locale={locale}
-              setLocale={setLocale}
-            ></TemplatesTable>
             <DebugBox
               connected={connected}
               setConnected={setConnected}
               message={message}
               setMessage={setMessage}
             ></DebugBox>
+            <TemplatesTable
+              message={message}
+              setMessage={setMessage}
+              connected={connected}
+              setConnected={setConnected}
+              locale={locale}
+              setLocale={setLocale}
+            ></TemplatesTable>
           </main>
           <Footer></Footer>
         </div>

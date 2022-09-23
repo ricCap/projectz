@@ -43,6 +43,7 @@
     "@walletconnect/web3-provider": "^1.8.0",
     "autoprefixer": "^10.4.9",
     "hardhat": "2.11.1",
+    "hardhat-gas-reporter": "^1.0.8",
     "postcss": "^8.4.16",
     "rollup-plugin-polyfill-node": "^0.10.2",
     "solhint": "^3.3.7",
