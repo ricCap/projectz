@@ -3,7 +3,7 @@
 import "../Manager.sol";
 import "./DefaultProjectTemplate.sol";
 
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.17;
 
 struct Project {
     string title;
@@ -18,6 +18,8 @@ interface IExampleProjectTemplate {
 
 /** @dev Example project template */
 contract ExampleProjectTemplate is DefaultProjectTemplate, IExampleProjectTemplate {
+    bytes4 public constant IID = type(IExampleProjectTemplate).interfaceId;
+
     mapping(uint256 => Project) internal idToProject;
 
     constructor() DefaultProjectTemplate("ExampleProjectTemplate", "EXAMPLE") {} // solhint-disable-line no-empty-blocks

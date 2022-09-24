@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.17;
 
 import "../Manager.sol";
 import "./IProjectTemplate.sol";
 import "./DefaultProjectTemplate.sol";
-import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
@@ -29,7 +28,6 @@ contract MasterZTemplate is DefaultProjectTemplate {
     }
 
     /////// variables ///////
-    ProjectState public projectState = ProjectState.Fundraising;
     IERC20 internal cUsdToken = IERC20(0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1);
     string public info;
     uint256 public hardCap = 4;
@@ -37,20 +35,25 @@ contract MasterZTemplate is DefaultProjectTemplate {
     // project
     struct Checkpoint {
         CheckpointState state;
-        string info;
+        string title;
+        string description;
         uint256 cost;
         uint256 partnerID;
     }
+
     struct Project {
         ProjectState projectState;
+        string title;
+        string description;
         address partecipant;
         uint256 deadline;
-        Checkpoint[3] checkpoints;
+        Checkpoint[] checkpoints;
         uint256 activeCheckpoint;
     }
+
     mapping(uint256 => Project) internal projects;
 
-    // TODO: HOW THE FUCK CAN WE INCLUDE IT IN THE STRUCT??
+    // TODO: include contributions in the project struct or move it somewhere else
     mapping(uint256 => mapping(address => uint256)) internal contributions;
 
     // TODO: create a real address book contract
@@ -100,15 +103,21 @@ contract MasterZTemplate is DefaultProjectTemplate {
         );
         _indexProject = super.safeMint();
 
+        uint256 _deadline = block.timestamp.add(_fundingDurationInDays.mul(1 days));
+
         // define new project
         // TODO: check deepcopy checkpoints
         // checkpoints
-        Checkpoint[3] storage _checkpoints;
-        _checkpoints[0] = Checkpoint(CheckpointState.WaitingInitialization, "Follow 80% of courses.", 1, 0);
-        _checkpoints[1] = Checkpoint(CheckpointState.WaitingInitialization, "Complete project-work.", 2, 1);
-        _checkpoints[2] = Checkpoint(CheckpointState.WaitingInitialization, "Pass final examination.", 1, 2);
-        uint256 _deadline = block.timestamp.add(_fundingDurationInDays.mul(1 days));
-        projects[_indexProject] = Project(ProjectState.Fundraising, _partecipantAddress, _deadline, _checkpoints, 0);
+        Project storage project = projects[_indexProject];
+        project.title = "Title";
+        project.description = "Description";
+        project.deadline = _deadline;
+        project.partecipant = _partecipantAddress;
+        project.projectState = ProjectState.Fundraising;
+        project.activeCheckpoint = 0;
+        project.checkpoints.push(
+            Checkpoint(CheckpointState.WaitingInitialization, "Checkpoint title", "Follow 80% of courses.", 1, 0)
+        );
     }
 
     function listProjects() public view returns (Project[] memory) {
@@ -254,8 +263,7 @@ contract MasterZTemplate is DefaultProjectTemplate {
         // activate next checkpoint
         projects[_indexProject].activeCheckpoint++;
         if (projects[_indexProject].activeCheckpoint == projects[_indexProject].checkpoints.length) {
-            console.log("Project finished succesfully!", msg.sender);
-            projectState = ProjectState.Finished;
+            projects[_indexProject].projectState = ProjectState.Finished;
         } else {
             initializeCheckPoint(projects[_indexProject].activeCheckpoint, _indexProject);
         }
@@ -266,24 +274,24 @@ contract MasterZTemplate is DefaultProjectTemplate {
         projects[_indexProject].projectState = ProjectState.Aborted;
     }
 
-    /**
-     *  Getter functions
-     */
-    function getCurrentCheckpoint(uint256 _indexProject) public view returns (Checkpoint memory) {
-        return projects[_indexProject].checkpoints[projects[_indexProject].activeCheckpoint];
-    }
+    // /**
+    //  *  Getter functions
+    //  */
+    // function getCurrentCheckpoint(uint256 _indexProject) public view returns (Checkpoint memory) {
+    //     return projects[_indexProject].checkpoints[projects[_indexProject].activeCheckpoint];
+    // }
 
     function getInfo() public view returns (string memory) {
         return info;
     }
 
-    function getBalance() public view returns (uint256) {
-        return cUsdToken.balanceOf(address(this));
-    }
+    // function getBalance() public view returns (uint256) {
+    //     return cUsdToken.balanceOf(address(this));
+    // }
 
-    function getProjectStatus(uint256 _indexProject) public view returns (ProjectState) {
-        return projects[_indexProject].projectState;
-    }
+    // function getProjectStatus(uint256 _indexProject) public view returns (ProjectState) {
+    //     return projects[_indexProject].projectState;
+    // }
 
     function _getAddress(uint256 _index) internal view returns (address) {
         return partnerAddressBook[_index];

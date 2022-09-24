@@ -4,7 +4,7 @@
     "build": "npm run build:css && npm run build:contract && npm run build:typechains && npm run build:vite",
     "build:vite": "vite build",
     "build:css": "npx tailwindcss -i ./src/index.css -o ./dist/output.css",
-    "build:contract": "npx hardhat compile",
+    "build:contract": "npx hardhat compile && npx hardhat size-contracts",
     "build:typechains": "npm run build:typechains-web3 && npm run build:typechains-ethers",
     "build:typechains-web3": "npx hardhat typechain",
     "build:typechains-ethers": "npx typechain --target=\"ethers-v5\" --out-dir typechain-types \"artifacts/contracts/**/*[!dbg].json\"",
@@ -29,6 +29,7 @@
     "@openzeppelin/contracts": "4.7.3",
     "bignumber.js": "9.1.0",
     "dotenv": "^16.0.2",
+    "hardhat-contract-sizer": "^2.6.1",
     "node-polyglot": "^2.4.2",
     "solid-js": "1.5.6"
   },

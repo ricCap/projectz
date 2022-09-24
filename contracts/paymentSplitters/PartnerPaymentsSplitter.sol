@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.17;
 
 import "./PaymentSplitterTemplate.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract PartnerPaymentsSplitter is PaymentSplitter, Ownable {
     uint256 internal activeCheckpoint;
 
+    // solhint-disable-next-line no-empty-blocks
     constructor(address[] memory _payees, uint256[] memory _shares) payable PaymentSplitter(_payees, _shares) {}
 
     function release(IERC20 _token, address _account) public virtual override {

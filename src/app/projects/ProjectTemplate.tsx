@@ -5,6 +5,13 @@ import { ProjectsTable } from './Projects'
 import { exampleTemplateContract, kit, managerContract } from '../Navbar'
 import { ProjectStruct } from '../../../typechain-types/projects/ExampleProjectTemplate.sol/ExampleProjectTemplate'
 
+import IProjectTemplateABI from '../../../artifacts/contracts/projects/IProjectTemplate.sol/IProjectTemplate.json'
+import MasterZTemplateABI from '../../../artifacts/contracts/projects/MasterZTemplate.sol/MasterZTemplate.json'
+
+import { IProjectTemplate } from '../../types/contracts/projects/IProjectTemplate'
+import { MasterZTemplate } from '../../types/contracts/projects'
+import Spinner from '../widgets/Spinner'
+
 export interface ProjectsProps extends ConnectionProps {
   selectedTemplate: Accessor<string | undefined>
   setSelectedTemplate: Setter<string | undefined>
@@ -15,7 +22,7 @@ export interface ProjectsProps extends ConnectionProps {
 export const TemplatesTable: Component<ConnectionProps> = props => {
   const [projectTemplates] = createResource(props.connected, fetchProjectTemplates)
   const [selectedTemplate, setSelectedTemplate] = createSignal<string | undefined>()
-  const [projects, { mutate, refetch }] = createResource(selectedTemplate, fetchProjectsForTemplate)
+  const [projects, { refetch }] = createResource(selectedTemplate, fetchProjectsForTemplate)
 
   const projectProps: ProjectsProps = mergeProps(props, {
     selectedTemplate: selectedTemplate,
@@ -27,17 +34,17 @@ export const TemplatesTable: Component<ConnectionProps> = props => {
   return (
     <div>
       <Show when={props.connected()}>
-        <Show
-          when={!projectTemplates.loading && props.connected()}
-          fallback={<div class="text-center">Loading templates</div>}
-        >
+        <h1 class="text-center text-3xl bg-blue-700 text-white py-2">Templates</h1>
+        <Show when={!projectTemplates.loading && props.connected()} fallback={<Spinner></Spinner>}>
           <div class="grid md:grid-cols-3">
             <For each={projectTemplates()}>
               {(templateName: string) => <ProjectTemplate {...projectProps} address={templateName}></ProjectTemplate>}
             </For>
           </div>
         </Show>
-        <ProjectsTable {...projectProps}></ProjectsTable>
+        <Show when={selectedTemplate()}>
+          <ProjectsTable {...projectProps}></ProjectsTable>
+        </Show>
       </Show>
     </div>
   )
@@ -68,6 +75,8 @@ interface ProjectTemplateProps extends ProjectsProps {
 }
 
 export const ProjectTemplate: Component<ProjectTemplateProps> = props => {
+  const [templateInfo] = createResource(props.address, getTemplateInfo)
+
   async function createProjectFromTemplate() {
     props.setMessage('Please approve the transaction in your wallet')
     await exampleTemplateContract.methods['safeMint((string,string))'](['hi', 'hi']).send({
@@ -77,10 +86,31 @@ export const ProjectTemplate: Component<ProjectTemplateProps> = props => {
     props.setMessage('Transaction completed')
   }
 
+  async function getTemplateInfo(address: string): Promise<string> {
+    const contractAsIProjectTemplate = new kit.web3.eth.Contract(
+      IProjectTemplateABI.abi as any,
+      address,
+    ) as unknown as IProjectTemplate
+
+    const IID = await exampleTemplateContract.methods.IID().call()
+    const isExampleTemplateContract = await contractAsIProjectTemplate.methods.supportsInterface(IID).call()
+    if (isExampleTemplateContract) {
+      return 'ExampleTemplateContract'
+    } else {
+      const contractAsMasterZTemplate = new kit.web3.eth.Contract(
+        MasterZTemplateABI.abi as any,
+        address,
+      ) as unknown as MasterZTemplate
+
+      return await contractAsMasterZTemplate.methods.getInfo().call()
+    }
+    return 'Unknown template'
+  }
+
   return (
     <div class="p-4 m-4 text-bold text-center bg-blue-100">
       <div class="grid grid-cols-2 align-center">
-        <p class="m-2 col-span-2 text-bold text-xl">Template</p>
+        <p class="m-2 col-span-2 text-bold text-xl">{templateInfo}</p>
         <div class="">
           <button
             type="button"

@@ -3,6 +3,7 @@ import '@nomicfoundation/hardhat-toolbox'
 import '@nomiclabs/hardhat-ethers'
 import '@nomiclabs/hardhat-web3'
 import 'hardhat-gas-reporter'
+import 'hardhat-contract-sizer'
 
 import * as dotenv from 'dotenv'
 dotenv.config()
@@ -17,7 +18,7 @@ const config: HardhatUserConfig = {
       },
     },
   },
-  solidity: '0.8.9',
+  solidity: '0.8.17',
   typechain: {
     outDir: 'src/types',
     target: 'web3-v1',

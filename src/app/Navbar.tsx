@@ -9,7 +9,7 @@ import { getI18N } from './i18n/i18n'
 import * as constants from './constants'
 
 import managerABI from '../../artifacts/contracts/Manager.sol/Manager.json'
-import exampleProjectABI from '../../artifacts/contracts/projects/ExampleProjectTemplate.sol/IExampleProjectTemplate.json'
+import exampleProjectABI from '../../artifacts/contracts/projects/ExampleProjectTemplate.sol/ExampleProjectTemplate.json'
 
 import { Manager } from '../types/contracts/Manager'
 import { ExampleProjectTemplate } from '../types/contracts/projects/ExampleProjectTemplate.sol'
@@ -186,12 +186,9 @@ async function _connect(props: INavbarProps, web3: Web3) {
   const accounts = await kit.web3.eth.getAccounts()
   kit.defaultAccount = accounts[0]
 
-  managerContract = new kit.web3.eth.Contract(
-    managerABI.abi as AbiItem[],
-    constants.addresses.Manager,
-  ) as unknown as Manager
+  managerContract = new kit.web3.eth.Contract(managerABI.abi as any, constants.addresses.Manager) as unknown as Manager
   exampleTemplateContract = new kit.web3.eth.Contract(
-    exampleProjectABI.abi as AbiItem[],
+    exampleProjectABI.abi as any,
     constants.addresses.ExampleProjectTemplate,
   ) as unknown as ExampleProjectTemplate
   props.setConnected(true)

@@ -2,7 +2,7 @@
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.17;
 
 /**
  * @dev All project templates should implement this interface

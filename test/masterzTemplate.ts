@@ -1,25 +1,57 @@
-import { expect } from "chai";
-const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers");
-const { ethers } = require("hardhat");
+import { expect } from 'chai'
+import { ethers } from 'hardhat'
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 
-describe("MasterZTemplate", function () {
-  // Fixture
-  async function deployContractFixture() {
-    const deadlineDays = "1"; // days
-    const partecipantAddress = "0x0123456789";
+import { Manager } from '../typechain-types/Manager'
+import { MasterZTemplate } from '../typechain-types/projects/MasterZTemplate'
+import { BigNumber } from '@ethersproject/bignumber'
 
-    const [owner, otherAccounts] = await ethers.getSigners();
+describe('MasterZTemplate', function () {
+  let managerContract: Manager
+  let owner: SignerWithAddress
+  let masterzTemplateContract: MasterZTemplate
 
-    const MasterZTemplate = await ethers.getContractFactory("MasterZTemplate");
-    const deployed = await MasterZTemplate.deploy(partecipantAddress, deadlineDays);
+  this.beforeEach(async function () {
+    ;[owner] = await ethers.getSigners()
 
-    return { deployed, MasterZTemplate, owner, otherAccounts, deadlineDays };
-  }
+    // deploy manager
+    const managerFactory = await ethers.getContractFactory('Manager')
+    managerContract = (await managerFactory.deploy()) as Manager
+    await managerContract.deployed()
 
-  it("Should Get initial contract state == 0", async function () {
-    const { deployed } = await loadFixture(deployContractFixture());
+    // deploy MasterZTemplate
+    const masterzTemplateFactory = await ethers.getContractFactory('MasterZTemplate')
+    masterzTemplateContract = (await masterzTemplateFactory.deploy()) as MasterZTemplate
 
-    const projectState = await deployed.getProjectStatus();
-    expect(projectState).to.equal(0);
-  });
-});
+    // transfer ownership of template to manager
+    await (await masterzTemplateContract.transferOwnership(managerContract.address)).wait()
+  })
+
+  it('Should create project', async function () {
+    const deadlineDays = BigNumber.from(1) // days
+    const partecipantAddress = '0x0000000000000000000000000000000000000000'
+    await (
+      await masterzTemplateContract
+        .connect(owner)
+        ['safeMint(address,uint256)'](partecipantAddress, deadlineDays, { gasLimit: 1000000 })
+    ).wait()
+
+    const projects = await masterzTemplateContract.connect(owner).listProjects()
+
+    expect(projects.length).to.equal(1)
+    expect(projects[0][0]).to.equal(0)
+    expect(projects[0][1]).to.equal('Title')
+    expect(projects[0][2]).to.equal('Description')
+    expect(projects[0][3]).to.equal(partecipantAddress)
+    // TODO expect(projects[0][4]).to.equal(deadlineDays)
+    expect(projects[0][5].length).equal(1)
+    expect([...projects[0][5][0]]).deep.equal([
+      0,
+      'Checkpoint title',
+      'Follow 80% of courses.',
+      BigNumber.from(1),
+      BigNumber.from(0),
+    ])
+    expect(projects[0][0]).to.equal(BigNumber.from(0))
+  })
+})
