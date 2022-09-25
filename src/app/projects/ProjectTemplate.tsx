@@ -3,15 +3,19 @@ import { ConnectionProps as ConnectionProps } from '../App'
 
 import { ProjectsTable } from './Projects'
 import { exampleTemplateContract, kit, managerContract } from '../Navbar'
-import { ProjectStruct } from '../../../typechain-types/projects/ExampleProjectTemplate.sol/ExampleProjectTemplate'
+import Spinner from '../widgets/Spinner'
 
 import IProjectTemplateABI from '../../../artifacts/contracts/projects/IProjectTemplate.sol/IProjectTemplate.json'
 import MasterZTemplateABI from '../../../artifacts/contracts/projects/MasterZTemplate.sol/MasterZTemplate.json'
+import ExampleProjectTemplateABI from '../../../artifacts/contracts/projects/ExampleProjectTemplate.sol/ExampleProjectTemplate.json'
 
+import { ExampleProjectTemplate } from '../../types/contracts/projects/ExampleProjectTemplate.sol'
 import { IProjectTemplate } from '../../types/contracts/projects/IProjectTemplate'
-import { MasterZTemplate } from '../../types/contracts/projects'
-import Spinner from '../widgets/Spinner'
+import { MasterZTemplate } from '../../types/contracts/projects/MasterZTemplate.sol/MasterZTemplate'
 
+import * as constants from '../constants'
+
+import { ProjectStruct } from '../../../typechain-types/projects/ExampleProjectTemplate.sol/ExampleProjectTemplate'
 export interface ProjectsProps extends ConnectionProps {
   selectedTemplate: Accessor<string | undefined>
   setSelectedTemplate: Setter<string | undefined>
@@ -92,25 +96,35 @@ export const ProjectTemplate: Component<ProjectTemplateProps> = props => {
       address,
     ) as unknown as IProjectTemplate
 
-    const IID = await exampleTemplateContract.methods.IID().call()
-    const isExampleTemplateContract = await contractAsIProjectTemplate.methods.supportsInterface(IID).call()
-    if (isExampleTemplateContract) {
-      return 'ExampleTemplateContract'
-    } else {
+    // Can we just check the address maybe?
+    if (
+      await contractAsIProjectTemplate.methods.supportsInterface(constants.addresses.ExampleProjectTemplate.iid).call()
+    ) {
+      const contractExampleProjectTemplate = new kit.web3.eth.Contract(
+        ExampleProjectTemplateABI.abi as any,
+        address,
+      ) as unknown as ExampleProjectTemplate
+
+      return await contractExampleProjectTemplate.methods.symbol().call()
+    }
+    if (await contractAsIProjectTemplate.methods.supportsInterface(constants.addresses.MasterZTemplate.iid).call()) {
       const contractAsMasterZTemplate = new kit.web3.eth.Contract(
         MasterZTemplateABI.abi as any,
         address,
       ) as unknown as MasterZTemplate
 
       return await contractAsMasterZTemplate.methods.getInfo().call()
+    } else {
+      return 'Unknown template'
     }
-    return 'Unknown template'
   }
 
   return (
     <div class="p-4 m-4 text-bold text-center bg-blue-100">
       <div class="grid grid-cols-2 align-center">
-        <p class="m-2 col-span-2 text-bold text-xl">{templateInfo}</p>
+        <Show when={!templateInfo.loading} fallback={<Spinner></Spinner>}>
+          <p class="m-2 col-span-2 text-bold text-xl">{templateInfo}</p>
+        </Show>
         <div class="">
           <button
             type="button"

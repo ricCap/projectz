@@ -8,8 +8,18 @@ import "./DefaultProjectTemplate.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
+interface IMasterZTemplate {
+    function safeMint(address _partecipantAddress, uint256 _fundingDurationInDays)
+        external
+        returns (uint256 _indexProject);
+
+    function listProjects() external view returns (MasterZTemplate.Project[] memory);
+
+    function iId() external pure returns (bytes4);
+}
+
 /** @dev Default project template for masterZ */
-contract MasterZTemplate is DefaultProjectTemplate {
+contract MasterZTemplate is DefaultProjectTemplate, IMasterZTemplate {
     using SafeMath for uint256;
 
     // enums
@@ -134,7 +144,7 @@ contract MasterZTemplate is DefaultProjectTemplate {
      *  TODO: Create interface masterZTemplate
      */
     function supportsInterface(bytes4 interfaceId) public view virtual override(DefaultProjectTemplate) returns (bool) {
-        return super.supportsInterface(interfaceId);
+        return interfaceId == type(IMasterZTemplate).interfaceId || super.supportsInterface(interfaceId);
     }
 
     /**
@@ -295,5 +305,9 @@ contract MasterZTemplate is DefaultProjectTemplate {
 
     function _getAddress(uint256 _index) internal view returns (address) {
         return partnerAddressBook[_index];
+    }
+
+    function iId() external pure override returns (bytes4) {
+        return type(IMasterZTemplate).interfaceId;
     }
 }

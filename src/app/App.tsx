@@ -58,7 +58,7 @@ const Footer = () => {
 const App: Component = () => {
   return (
     <div class="bg-black">
-      <div class="container mx-auto bg-white h-screen">
+      <div class="container mx-auto bg-white">
         <div class="flex flex-col h-screen">
           <Navbar
             connected={connected}
