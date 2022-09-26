@@ -81,13 +81,27 @@ interface ProjectTemplateProps extends ProjectsProps {
 export const ProjectTemplate: Component<ProjectTemplateProps> = props => {
   const [templateInfo] = createResource(props.address, getTemplateInfo)
 
-  async function createProjectFromTemplate() {
+  async function createProjectFromTemplate(address: string) {
     props.setMessage('Please approve the transaction in your wallet')
-    await exampleTemplateContract.methods['safeMint((string,string))'](['hi', 'hi']).send({
-      from: kit.defaultAccount,
-    })
-    // TODO check for transaction status
-    props.setMessage('Transaction completed')
+
+    if (address === constants.addresses.ExampleProjectTemplate.address) {
+      const receipt = await exampleTemplateContract.methods['safeMint((string,string))'](['hi', 'hi']).send({
+        from: kit.defaultAccount,
+      })
+      props.setMessage(`Transaction completed: ${receipt.logs}, ${receipt.status}`)
+    } else {
+      const contractAsMasterZTemplate = new kit.web3.eth.Contract(
+        MasterZTemplateABI.abi as any,
+        address,
+      ) as unknown as MasterZTemplate
+      const receipt = await contractAsMasterZTemplate.methods['safeMint(address,uint256)'](
+        '0x0000000000000000000000000000000000000000',
+        1,
+      ).send({
+        from: kit.defaultAccount,
+      })
+      props.setMessage(`Transaction completed: ${receipt.logs}, ${receipt.status}`)
+    }
   }
 
   async function getTemplateInfo(address: string): Promise<string> {
@@ -129,7 +143,7 @@ export const ProjectTemplate: Component<ProjectTemplateProps> = props => {
           <button
             type="button"
             class="bg-blue-800 hover:bg-blue-900 text-white font-bold py-2 px-4 content-end w-fit"
-            onClick={() => createProjectFromTemplate()}
+            onClick={() => createProjectFromTemplate(props.address)}
           >
             {props.locale().t('body.templates.button-create-project')}
           </button>
