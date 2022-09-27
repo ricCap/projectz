@@ -1,12 +1,79 @@
-import { Accessor, Component, createSignal, For, Setter, Show } from 'solid-js'
+import { Accessor, Component, createResource, createSignal, For, Setter, Show } from 'solid-js'
 
-import { ProjectStruct } from '../../../typechain-types/projects/ExampleProjectTemplate.sol/ExampleProjectTemplate'
+import MasterZTemplateABI from '../../../artifacts/contracts/projects/MasterZTemplate.sol/MasterZTemplate.json'
 import * as masterzTemplate from '../../../typechain-types/projects/MasterZTemplate'
+import { MasterZTemplate } from '../../types/contracts/projects/MasterZTemplate.sol/MasterZTemplate'
+import { kit } from '../Navbar'
+import { masterzProject } from './ExampleProject'
+import { ProjectsProps } from './ProjectTemplate'
+
+export const MasterZProjectTable: Component<ProjectsProps> = props => {
+  const [selectedProject, setSelectedProject] = createSignal<masterzTemplate.MasterZTemplate.ProjectStruct>()
+  const [projects, { refetch }] = createResource(props.selectedTemplate(), fetchProjects)
+
+  return (
+    <div>
+      <div class="grid md:grid-cols-3">
+        <For each={projects()}>
+          {(project: masterzTemplate.MasterZTemplate.ProjectStruct) => (
+            <Project
+              project={project}
+              selectedProject={selectedProject}
+              setSelectedProject={setSelectedProject}
+            ></Project>
+          )}
+        </For>
+      </div>
+      <a id="project-details" />
+      <Show when={selectedProject() !== undefined}>
+        <ProjectDetails project={selectedProject()}></ProjectDetails>
+      </Show>
+    </div>
+  )
+
+  async function fetchProjects(
+    templateAddress: string | undefined,
+  ): Promise<masterzTemplate.MasterZTemplate.ProjectStruct[]> {
+    if (props.connected() && templateAddress) {
+      const contractAsMasterZTemplate = new kit.web3.eth.Contract(
+        MasterZTemplateABI.abi as any,
+        templateAddress,
+      ) as unknown as MasterZTemplate
+
+      const output: [string, string, string, string, string, [string, string, string, string, string][], string][] =
+        await contractAsMasterZTemplate.methods.listProjects().call()
+      return output.map(value => {
+        const checkpointsListAsTuple = value[5]
+        const checkpoints: masterzTemplate.MasterZTemplate.CheckpointStruct[] = []
+        for (const checkpoint of checkpointsListAsTuple) {
+          checkpoints.push({
+            state: checkpoint[0],
+            title: checkpoint[1],
+            description: checkpoint[2],
+            cost: checkpoint[3],
+            partnerID: checkpoint[4],
+          })
+        }
+
+        return {
+          projectState: value[0],
+          title: value[1],
+          description: value[2],
+          partecipant: value[3],
+          deadline: value[4],
+          checkpoints: checkpoints,
+          activeCheckpoint: value[6],
+        }
+      })
+    }
+    return []
+  }
+}
 
 export const Project: Component<{
-  project: ProjectStruct
-  selectedProject: Accessor<ProjectStruct | undefined>
-  setSelectedProject: Setter<ProjectStruct | undefined>
+  project: masterzTemplate.MasterZTemplate.ProjectStruct
+  selectedProject: Accessor<masterzTemplate.MasterZTemplate.ProjectStruct | undefined>
+  setSelectedProject: Setter<masterzTemplate.MasterZTemplate.ProjectStruct | undefined>
 }> = props => {
   return (
     <a href="#project-details">
@@ -16,13 +83,16 @@ export const Project: Component<{
       >
         <p class="text-center font-bold text-xl">{props.project.title}</p>
         <p>{props.project.description}</p>
+        <p>{props.project.partecipant}</p>
         <img src="http://t1.gstatic.com/licensed-image?q=tbn:ANd9GcSxLr0EfOo_znMX-DYtQVeYFvNzAF4Xw3Ny8nm9RZqlS0QdgFMCBN81LtQxXfqj_1EviZSW9_zWBuBi6wLLtjA"></img>
       </div>
     </a>
   )
 }
 
-export const ProjectDetails: Component<{ project: masterzTemplate.MasterZTemplate.ProjectStruct }> = props => {
+export const ProjectDetails: Component<{
+  project: masterzTemplate.MasterZTemplate.ProjectStruct | undefined
+}> = props => {
   const [selectedCheckpoint, setSelectedCheckpoint] = createSignal<masterzTemplate.MasterZTemplate.CheckpointStruct>()
 
   return (
@@ -35,7 +105,7 @@ export const ProjectDetails: Component<{ project: masterzTemplate.MasterZTemplat
           ></img>
         </div>
         <div class="text-bold text-2xl m-2 p-2">
-          <span class="inline-block align-middle">Project for {props.project.partecipant}</span>
+          <span class="inline-block align-middle">Project for {props.project!.partecipant}</span>
         </div>
         <div>
           <button type="button" class="bg-blue-800 hover:bg-blue-900 text-white font-bold py-2 px-4">
@@ -58,7 +128,7 @@ export const ProjectDetails: Component<{ project: masterzTemplate.MasterZTemplat
       </div>
       <div class="flex">
         <div class="m-2">
-          <For each={props.project.checkpoints}>
+          <For each={props.project!.checkpoints}>
             {(checkpoint: masterzTemplate.MasterZTemplate.CheckpointStruct) => (
               <Checkpoint
                 checkpoint={checkpoint}

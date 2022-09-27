@@ -57,9 +57,9 @@ const Footer = () => {
 
 const App: Component = () => {
   return (
-    <div class="bg-black">
+    <div class="flex bg-black min-h-screen">
       <div class="container mx-auto bg-white">
-        <div class="flex flex-col h-screen">
+        <div class="flex flex-col min-h-screen">
           <Navbar
             connected={connected}
             setConnected={setConnected}

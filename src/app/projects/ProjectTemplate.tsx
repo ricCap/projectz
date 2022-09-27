@@ -15,24 +15,18 @@ import { MasterZTemplate } from '../../types/contracts/projects/MasterZTemplate.
 
 import * as constants from '../constants'
 
-import { ProjectStruct } from '../../../typechain-types/projects/ExampleProjectTemplate.sol/ExampleProjectTemplate'
 export interface ProjectsProps extends ConnectionProps {
   selectedTemplate: Accessor<string | undefined>
   setSelectedTemplate: Setter<string | undefined>
-  projects: Resource<ProjectStruct[]>
-  refetchProjects: (info?: unknown) => ProjectStruct[] | Promise<ProjectStruct[] | undefined> | null | undefined
 }
 
 export const TemplatesTable: Component<ConnectionProps> = props => {
   const [projectTemplates] = createResource(props.connected, fetchProjectTemplates)
   const [selectedTemplate, setSelectedTemplate] = createSignal<string | undefined>()
-  const [projects, { refetch }] = createResource(selectedTemplate, fetchProjectsForTemplate)
 
   const projectProps: ProjectsProps = mergeProps(props, {
     selectedTemplate: selectedTemplate,
     setSelectedTemplate: setSelectedTemplate,
-    projects: projects,
-    refetchProjects: refetch,
   })
 
   return (
@@ -52,19 +46,6 @@ export const TemplatesTable: Component<ConnectionProps> = props => {
       </Show>
     </div>
   )
-
-  async function fetchProjectsForTemplate(templateAddress: string): Promise<ProjectStruct[]> {
-    if (props.connected()) {
-      const output: [string, string][] = await exampleTemplateContract.methods.listProjects().call()
-      return output.map(value => {
-        return {
-          title: value[0],
-          description: value[1],
-        }
-      })
-    }
-    return []
-  }
 }
 
 async function fetchProjectTemplates(connected: boolean): Promise<string[]> {
@@ -100,7 +81,7 @@ export const ProjectTemplate: Component<ProjectTemplateProps> = props => {
       ).send({
         from: kit.defaultAccount,
       })
-      props.setMessage(`Transaction completed: ${receipt.logs}, ${receipt.status}`)
+      props.setMessage(`Transaction completed`)
     }
   }
 
@@ -155,9 +136,6 @@ export const ProjectTemplate: Component<ProjectTemplateProps> = props => {
             onClick={() => {
               props.setMessage(`Template selected ${props.address}`)
               props.setSelectedTemplate(props.address)
-              if (props.selectedTemplate() === props.address) {
-                props.refetchProjects()
-              }
             }}
           >
             {props.locale().t('body.templates.button-see-project')}
