@@ -1,4 +1,4 @@
-import { Accessor, Component, createResource, createSignal, For, Setter, Show } from 'solid-js'
+import { Accessor, Component, createResource, createSignal, For, mergeProps, Setter, Show } from 'solid-js'
 
 import MasterZTemplateABI from '../../../artifacts/contracts/projects/MasterZTemplate.sol/MasterZTemplate.json'
 import * as masterzTemplate from '../../../typechain-types/projects/MasterZTemplate'
@@ -6,27 +6,36 @@ import { MasterZTemplate } from '../../types/contracts/projects/MasterZTemplate.
 import { kit } from '../Navbar'
 import { masterzProject } from './ExampleProject'
 import { ProjectsProps } from './ProjectTemplate'
+import * as constants from '../constants'
 
 export const MasterZProjectTable: Component<ProjectsProps> = props => {
   const [selectedProject, setSelectedProject] = createSignal<masterzTemplate.MasterZTemplate.ProjectStruct>()
+  const [selectedProjectIndex, setSelectedProjectIndex] = createSignal<number>()
   const [projects, { refetch }] = createResource(props.selectedTemplate(), fetchProjects)
 
   return (
     <div>
       <div class="grid md:grid-cols-3">
         <For each={projects()}>
-          {(project: masterzTemplate.MasterZTemplate.ProjectStruct) => (
+          {(project: masterzTemplate.MasterZTemplate.ProjectStruct, index: Accessor<number>) => (
             <Project
               project={project}
+              projectIndex={index()}
               selectedProject={selectedProject}
               setSelectedProject={setSelectedProject}
+              selectedProjectIndex={selectedProjectIndex}
+              setSelectedProjectIndex={setSelectedProjectIndex}
             ></Project>
           )}
         </For>
       </div>
       <a id="project-details" />
-      <Show when={selectedProject() !== undefined}>
-        <ProjectDetails project={selectedProject()}></ProjectDetails>
+      <Show when={selectedProjectIndex() !== undefined}>
+        <ProjectDetails
+          {...mergeProps(props)}
+          selectedProject={selectedProject}
+          selectedProjectIndex={selectedProjectIndex}
+        ></ProjectDetails>
       </Show>
     </div>
   )
@@ -72,14 +81,20 @@ export const MasterZProjectTable: Component<ProjectsProps> = props => {
 
 export const Project: Component<{
   project: masterzTemplate.MasterZTemplate.ProjectStruct
+  projectIndex: number
   selectedProject: Accessor<masterzTemplate.MasterZTemplate.ProjectStruct | undefined>
-  setSelectedProject: Setter<masterzTemplate.MasterZTemplate.ProjectStruct | undefined>
+  setSelectedProject: Setter<masterzTemplate.MasterZTemplate.ProjectStruct>
+  selectedProjectIndex: Accessor<number | undefined>
+  setSelectedProjectIndex: Setter<number | undefined>
 }> = props => {
   return (
     <a href="#project-details">
       <div
         class="bg-sky-100 hover:bg-sky-200 m-6 p-2 cursor-pointer"
-        onClick={() => props.setSelectedProject(props.project)}
+        onClick={() => {
+          props.setSelectedProject(props.project)
+          props.setSelectedProjectIndex(props.projectIndex)
+        }}
       >
         <p class="text-center font-bold text-xl">{props.project.title}</p>
         <p>{props.project.description}</p>
@@ -90,10 +105,46 @@ export const Project: Component<{
   )
 }
 
-export const ProjectDetails: Component<{
-  project: masterzTemplate.MasterZTemplate.ProjectStruct | undefined
-}> = props => {
+export const ProjectDetails: Component<
+  ProjectsProps & {
+    selectedProject: Accessor<masterzTemplate.MasterZTemplate.ProjectStruct | undefined>
+    selectedProjectIndex: Accessor<number | undefined>
+  }
+> = props => {
   const [selectedCheckpoint, setSelectedCheckpoint] = createSignal<masterzTemplate.MasterZTemplate.CheckpointStruct>()
+
+  const [projectBalance, _] = createResource(async () => {
+    const cUSDtoken = await kit.contracts.getStableToken()
+    return (await cUSDtoken.balanceOf(props.selectedTemplate()!)).shiftedBy(-constants.ERC20_DECIMALS).toFixed(2)
+  })
+
+  async function approveDonationToContract(): Promise<void> {
+    const cUSDtoken = await kit.contracts.getStableToken()
+    console.log(cUSDtoken.address)
+    console.log(await cUSDtoken.balanceOf(kit.defaultAccount!))
+    const receipt = await cUSDtoken
+      .approve(props.selectedTemplate()!, '10000000000000000')
+      .sendAndWaitForReceipt({ from: kit.defaultAccount, gas: 1000000 })
+    console.log(await cUSDtoken.balanceOf(kit.defaultAccount!))
+    console.log(receipt.transactionHash)
+    console.log(receipt.logs)
+  }
+
+  async function donate(): Promise<void> {
+    const contractAsMasterZTemplate = new kit.web3.eth.Contract(
+      MasterZTemplateABI.abi as any,
+      props.selectedTemplate(),
+    ) as unknown as MasterZTemplate
+
+    const receipt = await contractAsMasterZTemplate.methods
+      .donate(props.selectedProjectIndex()!, '10000000000000000')
+      .send({
+        from: kit.defaultAccount,
+        gas: 1000000,
+      })
+    console.log(receipt.transactionHash)
+    console.log(receipt.logs)
+  }
 
   return (
     <div class="bg-blue-100">
@@ -105,17 +156,25 @@ export const ProjectDetails: Component<{
           ></img>
         </div>
         <div class="text-bold text-2xl m-2 p-2">
-          <span class="inline-block align-middle">Project for {props.project!.partecipant}</span>
+          <span class="inline-block align-middle">Project for {props.selectedProject()!.partecipant}</span>
         </div>
         <div>
-          <button type="button" class="bg-blue-800 hover:bg-blue-900 text-white font-bold py-2 px-4">
+          <button
+            type="button"
+            class="bg-blue-800 hover:bg-blue-900 text-white font-bold py-2 px-4"
+            onclick={async () => {
+              props.setMessage(`Please approve the donation to this address: ${props.selectedTemplate()}`)
+              await approveDonationToContract()
+              await donate()
+            }}
+          >
             Donate
           </button>
         </div>
       </div>
-      <div class="text-semibold text-xl w-fit p-2">
-        A very long description about Mario's project and why you should donate
-      </div>
+      <div class="text-semibold text-xl w-fit p-2">{props.selectedProject()?.description}</div>
+
+      <div>Balance: {projectBalance()}</div>
 
       <div class="w-1/2 p-2">
         <div class="flex justify-between mb-1">
@@ -128,7 +187,7 @@ export const ProjectDetails: Component<{
       </div>
       <div class="flex">
         <div class="m-2">
-          <For each={props.project!.checkpoints}>
+          <For each={props.selectedProject()!.checkpoints}>
             {(checkpoint: masterzTemplate.MasterZTemplate.CheckpointStruct) => (
               <Checkpoint
                 checkpoint={checkpoint}
