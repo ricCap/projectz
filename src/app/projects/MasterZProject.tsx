@@ -146,6 +146,18 @@ export const ProjectDetails: Component<
     console.log(receipt.logs)
   }
 
+  async function startProject(): Promise<void> {
+    const contractAsMasterZTemplate = new kit.web3.eth.Contract(
+      MasterZTemplateABI.abi as any,
+      props.selectedTemplate(),
+    ) as unknown as MasterZTemplate
+
+    await contractAsMasterZTemplate.methods.startProject(props.selectedProjectIndex()!).send({
+      from: kit.defaultAccount,
+      gas: 1000000,
+    })
+  }
+
   return (
     <div class="bg-blue-100">
       <div class="flex">
@@ -170,11 +182,24 @@ export const ProjectDetails: Component<
           >
             Donate
           </button>
+          <button
+            type="button"
+            class="bg-blue-800 hover:bg-blue-900 text-white font-bold py-2 px-4"
+            onclick={async () => {
+              await startProject()
+            }}
+          >
+            Start
+          </button>
         </div>
       </div>
       <div class="text-semibold text-xl w-fit p-2">{props.selectedProject()?.description}</div>
 
       <div>Balance: {projectBalance()}</div>
+      <div>Active checkpoint: {props.selectedProject()?.activeCheckpoint}</div>
+      <div>State: {props.selectedProject()?.projectState}</div>
+      <div>Deadline: {props.selectedProject()?.deadline}</div>
+      <div>Participant: {props.selectedProject()?.partecipant}</div>
 
       <div class="w-1/2 p-2">
         <div class="flex justify-between mb-1">

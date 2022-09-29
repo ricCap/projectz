@@ -40,7 +40,7 @@ contract MasterZTemplate is DefaultProjectTemplate, IMasterZTemplate {
     /////// variables ///////
     IERC20 internal cUsdToken = IERC20(0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1);
     string public info;
-    uint256 public hardCap = 4;
+    uint256 public hardCap = 4 * (10 ^ 18);
 
     // project
     struct Checkpoint {
@@ -216,9 +216,13 @@ contract MasterZTemplate is DefaultProjectTemplate, IMasterZTemplate {
      */
     function initializeCheckPoint(uint256 _indexCheckpoint, uint256 _indexProject)
         internal
-        onlyOwner
         onlyState(ProjectState.InProgress, _indexProject)
     {
+        Manager _manager = Manager(owner());
+        require(
+            _manager.hasRole(_manager.DEFAULT_ADMIN_ROLE(), msg.sender),
+            "only DEFAULT_ADMIN_ROLE can create projects"
+        );
         require(
             projects[_indexProject].checkpoints[_indexCheckpoint].state == CheckpointState.WaitingInitialization,
             "Checkpoint not in the correct state"
@@ -229,8 +233,14 @@ contract MasterZTemplate is DefaultProjectTemplate, IMasterZTemplate {
     /**
      *  Start specified checkpoint with pull payment request
      */
-    function startCheckPoint(uint256 _indexProject) public onlyOwner onlyState(ProjectState.InProgress, _indexProject) {
+    function startCheckPoint(uint256 _indexProject) public onlyState(ProjectState.InProgress, _indexProject) {
         uint256 _activeCheckpoint = projects[_indexProject].activeCheckpoint;
+
+        Manager _manager = Manager(owner());
+        require(
+            _manager.hasRole(_manager.DEFAULT_ADMIN_ROLE(), msg.sender),
+            "only DEFAULT_ADMIN_ROLE can create projects"
+        );
 
         // check correct checkpoint
         require(
@@ -262,24 +272,33 @@ contract MasterZTemplate is DefaultProjectTemplate, IMasterZTemplate {
     /**
      *  Set a checkpoint as finished and start the next one.
      */
-    function finishCheckpoint(uint256 _indexProject)
-        public
-        onlyOwner
-        onlyState(ProjectState.InProgress, _indexProject)
-    {
-        // approve current checkpoint
-        projects[_indexProject].checkpoints[projects[_indexProject].activeCheckpoint].state = CheckpointState.Finished;
+    // function finishCheckpoint(uint256 _indexProject) public onlyState(ProjectState.InProgress, _indexProject) {
+    //     Manager _manager = Manager(owner());
+    //     require(
+    //         _manager.hasRole(_manager.DEFAULT_ADMIN_ROLE(), msg.sender),
+    //         "only DEFAULT_ADMIN_ROLE can create projects"
+    //     );
 
-        // activate next checkpoint
-        projects[_indexProject].activeCheckpoint++;
-        if (projects[_indexProject].activeCheckpoint == projects[_indexProject].checkpoints.length) {
-            projects[_indexProject].projectState = ProjectState.Finished;
-        } else {
-            initializeCheckPoint(projects[_indexProject].activeCheckpoint, _indexProject);
-        }
-    }
+    //     // approve current checkpoint
+    //     projects[_indexProject].checkpoints[projects[_indexProject].activeCheckpoint].state
+    //         = CheckpointState.Finished;
 
-    function abortProject(uint256 _indexProject) public onlyOwner {
+    //     // activate next checkpoint
+    //     projects[_indexProject].activeCheckpoint++;
+    //     if (projects[_indexProject].activeCheckpoint == projects[_indexProject].checkpoints.length) {
+    //         projects[_indexProject].projectState = ProjectState.Finished;
+    //     } else {
+    //         initializeCheckPoint(projects[_indexProject].activeCheckpoint, _indexProject);
+    //     }
+    // }
+
+    function abortProject(uint256 _indexProject) public {
+        Manager _manager = Manager(owner());
+        require(
+            _manager.hasRole(_manager.DEFAULT_ADMIN_ROLE(), msg.sender),
+            "only DEFAULT_ADMIN_ROLE can create projects"
+        );
+
         // TODO: return funds
         projects[_indexProject].projectState = ProjectState.Aborted;
     }
