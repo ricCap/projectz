@@ -1,4 +1,11 @@
 {
-  "Manager": "0xEE253CFdaB397f0259E47043E0180d9792a32637",
-  "ExampleProjectTemplate": "0x7013052f5d79258FA1bCd4975347EebAf6E01Eef"
+  "Manager": "0xf100762F32FC141914147e27E542325BBbf79030",
+  "ExampleProjectTemplate": {
+    "address": "0xd0DF553bc44d9298639D76343f3547B97BB39BD7",
+    "iid": "0x5d608db9"
+  },
+  "MasterZTemplate": {
+    "address": "0x65E20A5D3F7002338490caB4C6691194C8Da0030",
+    "iid": "0x12f060e7"
+  }
 }

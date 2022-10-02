@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.17;
 
 /** Default project template
  * @dev make sure to inherit from this contract when creating project templates

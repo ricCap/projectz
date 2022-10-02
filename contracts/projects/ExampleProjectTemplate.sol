@@ -3,7 +3,7 @@
 import "../Manager.sol";
 import "./DefaultProjectTemplate.sol";
 
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.17;
 
 struct Project {
     string title;
@@ -14,6 +14,8 @@ interface IExampleProjectTemplate {
     function safeMint(Project calldata project) external returns (uint256 _tokenId);
 
     function listProjects() external view returns (Project[] memory);
+
+    function iId() external pure returns (bytes4);
 }
 
 /** @dev Example project template */
@@ -50,5 +52,9 @@ contract ExampleProjectTemplate is DefaultProjectTemplate, IExampleProjectTempla
      */
     function supportsInterface(bytes4 interfaceId) public view virtual override(DefaultProjectTemplate) returns (bool) {
         return interfaceId == type(IExampleProjectTemplate).interfaceId || super.supportsInterface(interfaceId);
+    }
+
+    function iId() external pure override returns (bytes4) {
+        return type(IExampleProjectTemplate).interfaceId;
     }
 }
