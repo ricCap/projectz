@@ -29,7 +29,7 @@
     "@esbuild-plugins/node-modules-polyfill": "^0.1.4",
     "@openzeppelin/contracts": "4.7.3",
     "bignumber.js": "9.1.0",
-    "dotenv": "^16.0.2",
+    "dotenv": "^16.0.3",
     "hardhat-contract-sizer": "^2.6.1",
     "node-polyglot": "^2.4.2",
     "solid-js": "1.5.7"
