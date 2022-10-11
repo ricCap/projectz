@@ -161,15 +161,15 @@ contract MasterZTemplate is DefaultProjectTemplate, IMasterZTemplate {
         onlyState(ProjectState.Fundraising, _indexProject)
     {
         // TODO: check https://blog.openzeppelin.com/reentrancy-after-istanbul/
-        //require(IERC20(cUSDContract).transferFrom(msg.sender, address(this), _amount), "Donation Failed");
+        require(IERC20(cUSDContract).transferFrom(msg.sender, address(this), _amount), "Donation Failed");
         // save contribution
         contributions[_indexProject][msg.sender] = contributions[_indexProject][msg.sender].add(_amount);
         emit FundingReceived(msg.sender, _amount, IERC20(cUSDContract).balanceOf(address(this)), _indexProject);
         // check hardcap
         _checkIfHardCapReached(_indexProject);
-        // if (projects[_indexProject].projectState == ProjectState.Fundraising) {
-        //    _checkIfFundingExpired(_indexProject);
-        // }
+        if (projects[_indexProject].projectState == ProjectState.Fundraising) {
+            _checkIfFundingExpired(_indexProject);
+        }
     }
 
     /**

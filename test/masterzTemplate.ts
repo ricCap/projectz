@@ -71,7 +71,7 @@ describe('MasterZTemplate', function () {
     const kit = Kit.newKit('http://localhost:8545')
     const cUSDtoken = await kit.contracts.getStableToken()
     await cUSDtoken
-      .approve(owner.address, '10000000000000000')
+      .approve(masterzTemplateContract.address, '10000000000000000')
       .sendAndWaitForReceipt({ from: owner.address, gasPrice: 391536019 })
   }
 
