@@ -18,9 +18,11 @@
     "deploy": "npx hardhat run --network alfajores scripts/deploy.ts",
     "test": "npm run test:contract",
     "test:contract": "npx hardhat test",
+    "test:integration": "npx hardhat test --network ganache",
     "test:testnet": "npx hardhat test --network alfajores",
     "all": "npm run clean && npm run lint && npm run build && npm run test",
-    "postinstall": "npm run build:contract && npm run build:typechains"
+    "postinstall": "npm run build:contract && npm run build:typechains",
+    "ganache": "npx ganache --fork.url https://alfajores-forno.celo-testnet.org --chain.chainId 31337 --wallet.unlockedAccounts=\"$(cat .accounts.json)\""
   },
   "license": "MIT",
   "dependencies": {
@@ -30,6 +32,7 @@
     "@openzeppelin/contracts": "4.7.3",
     "bignumber.js": "9.1.0",
     "dotenv": "^16.0.3",
+    "ganache": "^7.4.4",
     "hardhat-contract-sizer": "^2.6.1",
     "node-polyglot": "^2.4.2",
     "solid-js": "1.5.7"

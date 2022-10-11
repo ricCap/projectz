@@ -38,7 +38,7 @@ contract MasterZTemplate is DefaultProjectTemplate, IMasterZTemplate {
     }
 
     /////// variables ///////
-    IERC20 internal cUsdToken = IERC20(0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1);
+    address internal cUSDContract = 0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1;
     string public info;
     uint256 public hardCap = 4 * (10 ^ 18);
 
@@ -150,7 +150,7 @@ contract MasterZTemplate is DefaultProjectTemplate, IMasterZTemplate {
     /**
      *  Receive funds
      *  // TODO: add buffer fee
-     *  // TODO: approve cUsdTOken
+     *  // TODO: approve IERC20(cUSDContract)
      *  // TODO: add payment splitter
      *  // TODO: refund
      *  // check different require
@@ -161,17 +161,15 @@ contract MasterZTemplate is DefaultProjectTemplate, IMasterZTemplate {
         onlyState(ProjectState.Fundraising, _indexProject)
     {
         // TODO: check https://blog.openzeppelin.com/reentrancy-after-istanbul/
-        require(cUsdToken.transferFrom(msg.sender, address(this), _amount), "Donation Failed");
-
+        //require(IERC20(cUSDContract).transferFrom(msg.sender, address(this), _amount), "Donation Failed");
         // save contribution
         contributions[_indexProject][msg.sender] = contributions[_indexProject][msg.sender].add(_amount);
-        emit FundingReceived(msg.sender, _amount, cUsdToken.balanceOf(address(this)), _indexProject);
-
+        emit FundingReceived(msg.sender, _amount, IERC20(cUSDContract).balanceOf(address(this)), _indexProject);
         // check hardcap
         _checkIfHardCapReached(_indexProject);
-        if (projects[_indexProject].projectState == ProjectState.Fundraising) {
-            _checkIfFundingExpired(_indexProject);
-        }
+        // if (projects[_indexProject].projectState == ProjectState.Fundraising) {
+        //    _checkIfFundingExpired(_indexProject);
+        // }
     }
 
     /**
@@ -179,7 +177,7 @@ contract MasterZTemplate is DefaultProjectTemplate, IMasterZTemplate {
      *  TODO: check balance payment splitter
      */
     function _checkIfHardCapReached(uint256 _indexProject) private {
-        if (cUsdToken.balanceOf(address(this)) >= hardCap) {
+        if (IERC20(cUSDContract).balanceOf(address(this)) >= hardCap) {
             projects[_indexProject].projectState = ProjectState.WaitingToStart;
         }
     }
@@ -256,7 +254,7 @@ contract MasterZTemplate is DefaultProjectTemplate, IMasterZTemplate {
 
         // If I am the partner, or the owner of the contract, I can start the project and activate the payment
         require(
-            cUsdToken.transferFrom(
+            IERC20(cUSDContract).transferFrom(
                 address(this),
                 _partnerAddress,
                 projects[_indexProject].checkpoints[_activeCheckpoint].cost
@@ -315,7 +313,7 @@ contract MasterZTemplate is DefaultProjectTemplate, IMasterZTemplate {
     }
 
     // function getBalance() public view returns (uint256) {
-    //     return cUsdToken.balanceOf(address(this));
+    //     return IERC20(cUSDContract).balanceOf(address(this));
     // }
 
     // function getProjectStatus(uint256 _indexProject) public view returns (ProjectState) {
