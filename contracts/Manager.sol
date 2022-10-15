@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.17;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./AddressBook.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
@@ -10,28 +10,29 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
  * Manager contract that owns the other parts of the application
  * @dev currently handles access control as well
  */
-contract Manager is AccessControl, IERC721Receiver {
-    // roles
-    bytes32 public constant PARTNER_ROLE = keccak256("PARTNER_ROLE");
-    bytes32 public constant PARTICIPANT_ROLE = keccak256("PARTICIPANT_ROLE");
-    bytes32 public constant DONOR_ROLE = keccak256("DONOR_ROLE");
-
+contract Manager is IERC721Receiver {
     // events
     event ProjectTemplateAdded(address _address, uint256 _index);
 
     // data
     uint256 private projectTemplatesLength = 0;
     mapping(uint256 => address) private projectTemplateIDToAddress;
+    address public addressBookAddress;
 
-    constructor() {
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    constructor(address _addressBookAddress) {
+        addressBookAddress = _addressBookAddress;
     }
 
     /**
      * @dev Add a new project template
      * @param _address the address of the template
      */
-    function addProjectTemplate(address _address) public onlyRole(DEFAULT_ADMIN_ROLE) returns (uint256 _index) {
+    function addProjectTemplate(address _address) public returns (uint256 _index) {
+        AddressBook _addressBook = AddressBook(addressBookAddress);
+        require(
+            _addressBook.hasRole(_addressBook.DEFAULT_ADMIN_ROLE(), msg.sender),
+            "only DEFAULT_ADMIN_ROLE can add project template"
+        );
         // TODO check _address supports ERC721 interface and IProjectTemplate
         projectTemplateIDToAddress[projectTemplatesLength] = _address;
         projectTemplatesLength++;

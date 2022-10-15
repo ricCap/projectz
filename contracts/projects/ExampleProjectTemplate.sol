@@ -28,12 +28,17 @@ contract ExampleProjectTemplate is DefaultProjectTemplate, IExampleProjectTempla
         revert("Call safeMint([string,string]) instead; project data is required");
     }
 
-    function safeMint(Project calldata project) public returns (uint256 _tokenId) {
+    function onlyAdmin() private view {
         Manager _manager = Manager(owner());
+        AddressBook _addressBook = AddressBook(_manager.addressBookAddress());
         require(
-            _manager.hasRole(_manager.DEFAULT_ADMIN_ROLE(), msg.sender),
-            "only DEFAULT_ADMIN_ROLE can create projects"
+            _addressBook.hasRole(_addressBook.DEFAULT_ADMIN_ROLE(), msg.sender),
+            "only DEFAULT_ADMIN_ROLE can create templates"
         );
+    }
+
+    function safeMint(Project calldata project) public returns (uint256 _tokenId) {
+        onlyAdmin();
         _tokenId = super.safeMint();
         idToProject[_tokenId] = project;
     }

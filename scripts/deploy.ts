@@ -1,16 +1,24 @@
 import { ethers } from 'hardhat'
 import * as fs from 'fs'
-import { ExampleProjectTemplate, MasterZTemplate } from '../typechain-types'
+
+import { AddressBook } from '../typechain-types/AddressBook'
 
 export type DeployedAddresses = {
+  AddressBook: string
   Manager: string
   ExampleProjectTemplate: string
   MasterZTemplate: string
+  ProjectLibrary: string
 }
 
 async function main() {
+  const addressBookFactory = await ethers.getContractFactory('AddressBook')
+  const addressBookContract = (await addressBookFactory.deploy()) as AddressBook
+  await addressBookContract.deployed()
+  console.log(`AddressBook deployed to ${addressBookContract.address}`)
+
   const managerFactory = await ethers.getContractFactory('Manager')
-  const managerContract = await managerFactory.deploy()
+  const managerContract = await managerFactory.deploy(addressBookContract.address)
   await managerContract.deployed()
   console.log(`Manager deployed to ${managerContract.address}`)
 
@@ -20,8 +28,16 @@ async function main() {
   await managerContract.addProjectTemplate(exampleProjectTemplateContract.address)
   console.log(`Example template deployed to ${exampleProjectTemplateContract.address} and added to manager`)
 
-  // deploy MasterZTemplate
-  const masterzTemplateFactory = await ethers.getContractFactory('MasterZTemplate')
+  const projectLibraryFactory = await ethers.getContractFactory('ProjectLibrary')
+  const projectLibraryContract = await projectLibraryFactory.deploy()
+  await projectLibraryContract.deployed()
+  console.log(`ProjectLibrary deployed to ${projectLibraryContract.address}`)
+
+  const masterzTemplateFactory = await ethers.getContractFactory('MasterZTemplate', {
+    libraries: {
+      ProjectLibrary: projectLibraryContract.address,
+    },
+  })
   const masterzTemplateContract = await masterzTemplateFactory.deploy()
   await masterzTemplateContract.transferOwnership(managerContract.address)
   await managerContract.addProjectTemplate(masterzTemplateContract.address)
@@ -29,9 +45,11 @@ async function main() {
 
   // Store addresses into a file the app can use
   const addresses: DeployedAddresses = {
+    AddressBook: addressBookContract.address,
     Manager: managerContract.address,
     ExampleProjectTemplate: exampleProjectTemplateContract.address,
     MasterZTemplate: masterzTemplateContract.address,
+    ProjectLibrary: projectLibraryContract.address,
   }
 
   fs.writeFileSync('./src/addresses.json', JSON.stringify(addresses, null, 2), 'utf8')

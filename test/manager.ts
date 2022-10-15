@@ -5,6 +5,7 @@ import '@nomiclabs/hardhat-ethers'
 
 import ExampleProjectTemplateABI from '../artifacts/contracts/projects/ExampleProjectTemplate.sol/ExampleProjectTemplate.json'
 
+import { AddressBook } from '../typechain-types/AddressBook'
 import { Manager } from '../typechain-types/Manager'
 import { ExampleProjectTemplate } from '../typechain-types/projects/ExampleProjectTemplate.sol'
 import { ProjectStruct } from '../typechain-types/projects/ExampleProjectTemplate.sol/ExampleProjectTemplate'
@@ -13,6 +14,7 @@ describe('Manager', function () {
   this.timeout(50000)
 
   let managerContract: Manager
+  let addressBookContract: AddressBook
   let exampleProjectTemplateContract: ExampleProjectTemplate
   let exampleProjectTemplateContract2: ExampleProjectTemplate
   let owner: SignerWithAddress
@@ -20,9 +22,14 @@ describe('Manager', function () {
   let addr2: SignerWithAddress
 
   this.beforeEach(async function () {
+    // deploy address book
+    const addressBookFactory = await ethers.getContractFactory('AddressBook')
+    addressBookContract = (await addressBookFactory.deploy()) as AddressBook
+    await addressBookContract.deployed()
+
     // deploy manager
     const managerFactory = await ethers.getContractFactory('Manager')
-    managerContract = (await managerFactory.deploy()) as Manager
+    managerContract = (await managerFactory.deploy(addressBookContract.address)) as Manager
     await managerContract.deployed()
     ;[owner, addr1, addr2] = await ethers.getSigners()
 
@@ -36,11 +43,6 @@ describe('Manager', function () {
 
     // transfer ownership of template to manager
     await (await exampleProjectTemplateContract.transferOwnership(managerContract.address)).wait()
-  })
-
-  it('should grant contract deployer DEFAULT_ADMIN_ROLE role', async function () {
-    const defaultAdminRole = await managerContract.DEFAULT_ADMIN_ROLE()
-    expect(await managerContract.hasRole(defaultAdminRole, owner.address)).to.equal(true)
   })
 
   it('should allow DEFAULT_ADMIN to add project template', async () => {
