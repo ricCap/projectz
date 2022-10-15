@@ -11,3 +11,6 @@ test/gas.txt
 
 #Hardhat files
 cache
+
+# extra
+.DS_Store

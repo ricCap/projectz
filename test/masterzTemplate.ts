@@ -3,7 +3,7 @@ import { ethers } from 'hardhat'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 
 import { Manager } from '../typechain-types/Manager'
-import { MasterZTemplate } from '../typechain-types/projects/MasterZTemplate'
+import { MasterZTemplate } from '../typechain-types/projects/MasterZTemplate.sol'
 import { BigNumber } from '@ethersproject/bignumber'
 
 import * as Kit from '@celo/contractkit'
@@ -77,10 +77,21 @@ describe('MasterZTemplate', function () {
 
   itIf(integrationTestsOn)('Should fund project', async function () {
     await approveDonationToContract()
-    await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('1'))).wait()
+    await (await masterzTemplateContract.connect(owner).donate(BigNumber.from('0'), BigNumber.from('1'))).wait()
   })
 
-  // it('Should start project', async function () {
+  itIf(integrationTestsOn)('Should not reach hardcap with donation smaller than hardcap', async function () {
+    await approveDonationToContract()
+    const receipt = await (
+      await masterzTemplateContract.connect(owner).donate(BigNumber.from('0'), BigNumber.from('1'))
+    ).wait()
+    console.log(receipt.events![1].args)
+    expect(await masterzTemplateContract.getProjectStatus(0)).equals(0)
+  })
+
+  // itIf(integrationTestsOn)('Should start project', async function () {
+  //   await approveDonationToContract()
+  //   await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('5'))).wait()
   //   await (await masterzTemplateContract.connect(owner).startProject(0)).wait()
   //   const projects = await masterzTemplateContract.connect(owner).listProjects()
   //   expect(projects[0][0]).to.equal(1)
