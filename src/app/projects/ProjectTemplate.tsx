@@ -5,13 +5,11 @@ import { ProjectsTable } from './Projects'
 import { exampleTemplateContract, kit, managerContract } from '../Navbar'
 import Spinner from '../widgets/Spinner'
 
-import IProjectTemplateABI from '../../../artifacts/contracts/projects/IProjectTemplate.sol/IProjectTemplate.json'
 import MasterZTemplateABI from '../../../artifacts/contracts/projects/MasterZTemplate.sol/MasterZTemplate.json'
 import ExampleProjectTemplateABI from '../../../artifacts/contracts/projects/ExampleProjectTemplate.sol/ExampleProjectTemplate.json'
 
 import { ExampleProjectTemplate } from '../../types/contracts/projects/ExampleProjectTemplate.sol'
-import { IProjectTemplate } from '../../types/contracts/projects/IProjectTemplate'
-import { MasterZTemplate } from '../../types/contracts/projects/MasterZTemplate.sol/MasterZTemplate'
+import { MasterZTemplate } from '../../types/contracts/projects/MasterZTemplate'
 
 import * as constants from '../constants'
 
@@ -65,7 +63,7 @@ export const ProjectTemplate: Component<ProjectTemplateProps> = props => {
   async function createProjectFromTemplate(address: string) {
     props.setMessage('Please approve the transaction in your wallet')
 
-    if (address === constants.addresses.ExampleProjectTemplate.address) {
+    if (address === constants.addresses.ExampleProjectTemplate) {
       const receipt = await exampleTemplateContract.methods['safeMint((string,string))'](['hi', 'hi']).send({
         from: kit.defaultAccount,
       })
@@ -86,15 +84,8 @@ export const ProjectTemplate: Component<ProjectTemplateProps> = props => {
   }
 
   async function getTemplateInfo(address: string): Promise<string> {
-    const contractAsIProjectTemplate = new kit.web3.eth.Contract(
-      IProjectTemplateABI.abi as any,
-      address,
-    ) as unknown as IProjectTemplate
-
     // Can we just check the address maybe?
-    if (
-      await contractAsIProjectTemplate.methods.supportsInterface(constants.addresses.ExampleProjectTemplate.iid).call()
-    ) {
+    if (address == constants.addresses.ExampleProjectTemplate) {
       const contractExampleProjectTemplate = new kit.web3.eth.Contract(
         ExampleProjectTemplateABI.abi as any,
         address,
@@ -102,12 +93,11 @@ export const ProjectTemplate: Component<ProjectTemplateProps> = props => {
 
       return await contractExampleProjectTemplate.methods.symbol().call()
     }
-    if (await contractAsIProjectTemplate.methods.supportsInterface(constants.addresses.MasterZTemplate.iid).call()) {
+    if (address == constants.addresses.MasterZTemplate) {
       const contractAsMasterZTemplate = new kit.web3.eth.Contract(
         MasterZTemplateABI.abi as any,
         address,
       ) as unknown as MasterZTemplate
-
       return await contractAsMasterZTemplate.methods.getInfo().call()
     } else {
       return 'Unknown template'

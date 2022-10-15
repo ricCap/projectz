@@ -6,8 +6,6 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
-import "./projects/IProjectTemplate.sol";
-
 /**
  * Manager contract that owns the other parts of the application
  * @dev currently handles access control as well

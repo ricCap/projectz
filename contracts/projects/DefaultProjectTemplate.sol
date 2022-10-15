@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 import "../Manager.sol";
-import "./IProjectTemplate.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
@@ -14,7 +12,7 @@ pragma solidity ^0.8.17;
 /** Default project template
  * @dev make sure to inherit from this contract when creating project templates
  */
-abstract contract DefaultProjectTemplate is IProjectTemplate, ERC721, ERC721Enumerable, Ownable {
+abstract contract DefaultProjectTemplate is ERC721, ERC721Enumerable, Ownable {
     using Counters for Counters.Counter;
 
     event ProjectMinted(string name_, string symbol_, uint256 _projectIndex);
@@ -45,10 +43,10 @@ abstract contract DefaultProjectTemplate is IProjectTemplate, ERC721, ERC721Enum
         public
         view
         virtual
-        override(ERC721, ERC721Enumerable, IERC165)
+        override(ERC721, ERC721Enumerable)
         returns (bool)
     {
-        return interfaceId == type(IProjectTemplate).interfaceId || super.supportsInterface(interfaceId);
+        return super.supportsInterface(interfaceId);
     }
 
     function _beforeTokenTransfer(

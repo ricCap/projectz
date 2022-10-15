@@ -189,7 +189,7 @@ async function _connect(props: INavbarProps, web3: Web3) {
   managerContract = new kit.web3.eth.Contract(managerABI.abi as any, constants.addresses.Manager) as unknown as Manager
   exampleTemplateContract = new kit.web3.eth.Contract(
     exampleProjectABI.abi as any,
-    constants.addresses.ExampleProjectTemplate.address,
+    constants.addresses.ExampleProjectTemplate,
   ) as unknown as ExampleProjectTemplate
   props.setConnected(true)
   props.setMessage(`Connected: ${kit.defaultAccount}`)

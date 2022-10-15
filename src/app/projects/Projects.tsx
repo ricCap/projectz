@@ -10,10 +10,10 @@ export const ProjectsTable: Component<ProjectsProps> = props => {
     <div>
       <h1 class="text-center text-3xl bg-blue-700 text-white py-2">Projects</h1>
       <Switch>
-        <Match when={props.selectedTemplate() === constants.addresses.ExampleProjectTemplate.address}>
+        <Match when={props.selectedTemplate() === constants.addresses.ExampleProjectTemplate}>
           <ExampleProjectTable {...mergeProps(props)}></ExampleProjectTable>
         </Match>
-        <Match when={props.selectedTemplate() === constants.addresses.MasterZTemplate.address}>
+        <Match when={props.selectedTemplate() === constants.addresses.MasterZTemplate}>
           <MasterZProjectTable {...mergeProps(props)}></MasterZProjectTable>
         </Match>
       </Switch>
