@@ -114,7 +114,7 @@ contract MasterZTemplate is DefaultProjectTemplate {
             Checkpoint(CheckpointState.WaitingInitialization, "Checkpoint title", "Follow 80% of courses.", 1, 0)
         );
 
-        hardCaps[_indexProject] = 4 * (10 ^ 18);
+        hardCaps[_indexProject] = 5 wei;
     }
 
     function listProjects() public view returns (Project[] memory) {
