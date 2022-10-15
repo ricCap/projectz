@@ -76,16 +76,17 @@ describe('MasterZTemplate', function () {
   }
 
   itIf(integrationTestsOn)('Should fund project', async function () {
+    await deployProject()
     await approveDonationToContract()
     await (await masterzTemplateContract.connect(owner).donate(BigNumber.from('0'), BigNumber.from('1'))).wait()
   })
 
   itIf(integrationTestsOn)('Should not reach hardcap with donation smaller than hardcap', async function () {
+    await deployProject()
     await approveDonationToContract()
     const receipt = await (
       await masterzTemplateContract.connect(owner).donate(BigNumber.from('0'), BigNumber.from('1'))
     ).wait()
-    console.log(receipt.events![1].args)
     expect(await masterzTemplateContract.getProjectStatus(0)).equals(0)
   })
 

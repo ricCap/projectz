@@ -7,7 +7,7 @@ import "./DefaultProjectTemplate.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./ProjectsLibrary.sol";
-import "hardhat/console.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
 
 // enums
 enum CheckpointState {
@@ -46,6 +46,7 @@ struct Project {
 /** @dev Default project template for masterZ */
 contract MasterZTemplate is DefaultProjectTemplate {
     using SafeMath for uint256;
+    using Counters for Counters.Counter;
 
     /////// variables ///////
     address internal cUSDContract = 0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1;
@@ -113,7 +114,7 @@ contract MasterZTemplate is DefaultProjectTemplate {
             Checkpoint(CheckpointState.WaitingInitialization, "Checkpoint title", "Follow 80% of courses.", 1, 0)
         );
 
-        hardCaps[_indexProject] = 4_000_000_000_000_000_000_000_000_000_000_000_000;
+        hardCaps[_indexProject] = 4 * (10 ^ 18);
     }
 
     function listProjects() public view returns (Project[] memory) {
@@ -137,6 +138,7 @@ contract MasterZTemplate is DefaultProjectTemplate {
         payable
         onlyState(ProjectState.Fundraising, _indexProject)
     {
+        projectExists(_indexProject);
         // TODO: check https://blog.openzeppelin.com/reentrancy-after-istanbul/
         require(IERC20(cUSDContract).transferFrom(msg.sender, address(this), _amount), "Donation Failed");
 
@@ -157,8 +159,6 @@ contract MasterZTemplate is DefaultProjectTemplate {
      *  TODO: check balance payment splitter
      */
     function _checkIfHardCapReached(uint256 _indexProject) private {
-        console.log(funds[_indexProject]);
-        console.log(hardCaps[_indexProject]);
         if (funds[_indexProject] > hardCaps[_indexProject]) {
             projects[_indexProject].projectState = ProjectState.WaitingToStart;
             emit ProjectWaitingToStart(_indexProject);
@@ -179,6 +179,7 @@ contract MasterZTemplate is DefaultProjectTemplate {
      */
     function startProject(uint256 _indexProject) public onlyState(ProjectState.WaitingToStart, _indexProject) {
         onlyAdmin();
+        projectExists(_indexProject);
 
         // start project
         projects[_indexProject].projectState = ProjectState.InProgress;
@@ -196,6 +197,7 @@ contract MasterZTemplate is DefaultProjectTemplate {
         onlyState(ProjectState.InProgress, _indexProject)
     {
         onlyAdmin();
+        projectExists(_indexProject);
         require(
             projects[_indexProject].checkpoints[_indexCheckpoint].state == CheckpointState.WaitingInitialization,
             "Checkpoint not in the correct state"
@@ -208,6 +210,7 @@ contract MasterZTemplate is DefaultProjectTemplate {
      */
     function startCheckPoint(uint256 _indexProject) public onlyState(ProjectState.InProgress, _indexProject) {
         onlyAdmin();
+        projectExists(_indexProject);
         uint256 _activeCheckpoint = projects[_indexProject].activeCheckpoint;
 
         // check correct checkpoint
@@ -255,6 +258,10 @@ contract MasterZTemplate is DefaultProjectTemplate {
     //         initializeCheckPoint(projects[_indexProject].activeCheckpoint, _indexProject);
     //     }
     // }
+
+    function projectExists(uint256 _indexProject) internal view {
+        require(_indexProject < _tokenIdCounter.current(), "project does not exist");
+    }
 
     function onlyAdmin() internal view {
         Manager _manager = Manager(owner());
