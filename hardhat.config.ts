@@ -17,6 +17,15 @@ const config: HardhatUserConfig = {
         path: "m/44'/52752'/0'/0",
       },
     },
+    ganache: {
+      chainId: 31337,
+      url: 'http://127.0.0.1:8545',
+      gas: 10000000,
+      accounts: {
+        mnemonic: process.env.MNEMONIC,
+        path: "m/44'/52752'/0'/0",
+      },
+    },
   },
   solidity: '0.8.17',
   typechain: {

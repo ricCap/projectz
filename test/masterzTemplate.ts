@@ -6,13 +6,21 @@ import { Manager } from '../typechain-types/Manager'
 import { MasterZTemplate } from '../typechain-types/projects/MasterZTemplate'
 import { BigNumber } from '@ethersproject/bignumber'
 
+import * as Kit from '@celo/contractkit'
+import hre from 'hardhat'
+
+/** Conditional tests */
+const itIf = (condition: boolean) => (condition ? it : it.skip)
+const integrationTestsOn = hre.network.name == 'alfajores' || hre.network.name == 'ganache'
+
 describe('MasterZTemplate', function () {
   let managerContract: Manager
   let owner: SignerWithAddress
+  let donor: SignerWithAddress
   let masterzTemplateContract: MasterZTemplate
 
-  this.beforeEach(async function () {
-    ;[owner] = await ethers.getSigners()
+  beforeEach(async function () {
+    ;[owner, donor] = await ethers.getSigners()
 
     // deploy manager
     const managerFactory = await ethers.getContractFactory('Manager')
@@ -27,14 +35,18 @@ describe('MasterZTemplate', function () {
     await (await masterzTemplateContract.transferOwnership(managerContract.address)).wait()
   })
 
-  it('Should create project', async function () {
+  const partecipantAddress = '0x0000000000000000000000000000000000000000'
+  async function deployProject() {
     const deadlineDays = BigNumber.from(1) // days
-    const partecipantAddress = '0x0000000000000000000000000000000000000000'
     await (
       await masterzTemplateContract
         .connect(owner)
         ['safeMint(address,uint256)'](partecipantAddress, deadlineDays, { gasLimit: 1000000 })
     ).wait()
+  }
+
+  it('Should create project', async function () {
+    await deployProject()
 
     const projects = await masterzTemplateContract.connect(owner).listProjects()
 
@@ -54,4 +66,23 @@ describe('MasterZTemplate', function () {
     ])
     expect(projects[0][0]).to.equal(BigNumber.from(0))
   })
+
+  async function approveDonationToContract(): Promise<void> {
+    const kit = Kit.newKit('http://localhost:8545')
+    const cUSDtoken = await kit.contracts.getStableToken()
+    await cUSDtoken
+      .approve(masterzTemplateContract.address, '10000000000000000')
+      .sendAndWaitForReceipt({ from: owner.address, gasPrice: 391536019 })
+  }
+
+  itIf(integrationTestsOn)('Should fund project', async function () {
+    await approveDonationToContract()
+    await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('1'))).wait()
+  })
+
+  // it('Should start project', async function () {
+  //   await (await masterzTemplateContract.connect(owner).startProject(0)).wait()
+  //   const projects = await masterzTemplateContract.connect(owner).listProjects()
+  //   expect(projects[0][0]).to.equal(1)
+  // })
 })
