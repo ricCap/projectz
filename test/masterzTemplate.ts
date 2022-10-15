@@ -2,12 +2,14 @@ import { expect } from 'chai'
 import { ethers } from 'hardhat'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 
-import { Manager } from '../typechain-types/Manager'
-import { MasterZTemplate } from '../typechain-types/projects/MasterZTemplate'
 import { BigNumber } from '@ethersproject/bignumber'
-
 import * as Kit from '@celo/contractkit'
 import hre from 'hardhat'
+
+import { AddressBook } from '../typechain-types/AddressBook'
+import { Manager } from '../typechain-types/Manager'
+import { MasterZTemplate } from '../typechain-types/projects/MasterZTemplate'
+import { ProjectLibrary } from '../typechain-types/projects/ProjectsLibrary.sol/ProjectLibrary'
 
 /** Conditional tests */
 const itIf = (condition: boolean) => (condition ? it : it.skip)
@@ -22,13 +24,27 @@ describe('MasterZTemplate', function () {
   beforeEach(async function () {
     ;[owner, donor] = await ethers.getSigners()
 
+    // deploy address book
+    const addressBookFactory = await ethers.getContractFactory('AddressBook')
+    const addressBook = (await addressBookFactory.deploy()) as AddressBook
+    await addressBook.deployed()
+
     // deploy manager
     const managerFactory = await ethers.getContractFactory('Manager')
-    managerContract = (await managerFactory.deploy()) as Manager
+    managerContract = (await managerFactory.deploy(addressBook.address)) as Manager
     await managerContract.deployed()
 
+    // deploy library
+    const projectLibraryFactory = await ethers.getContractFactory('ProjectLibrary')
+    const projectLibraryContract = (await projectLibraryFactory.deploy()) as ProjectLibrary
+    await projectLibraryContract.deployed()
+
     // deploy MasterZTemplate
-    const masterzTemplateFactory = await ethers.getContractFactory('MasterZTemplate')
+    const masterzTemplateFactory = await ethers.getContractFactory('MasterZTemplate', {
+      libraries: {
+        ProjectLibrary: projectLibraryContract.address,
+      },
+    })
     masterzTemplateContract = (await masterzTemplateFactory.deploy()) as MasterZTemplate
 
     // transfer ownership of template to manager

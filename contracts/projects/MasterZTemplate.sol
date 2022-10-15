@@ -4,9 +4,9 @@ pragma solidity ^0.8.17;
 
 import "../Manager.sol";
 import "./DefaultProjectTemplate.sol";
+import "./ProjectLibrary.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "./ProjectsLibrary.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
 // enums
@@ -263,17 +263,13 @@ contract MasterZTemplate is DefaultProjectTemplate {
         require(_indexProject < _tokenIdCounter.current(), "project does not exist");
     }
 
-    function onlyAdmin() internal view {
-        Manager _manager = Manager(owner());
-        require(
-            _manager.hasRole(_manager.DEFAULT_ADMIN_ROLE(), msg.sender),
-            "only DEFAULT_ADMIN_ROLE can create projects"
-        );
-    }
-
     function abortProject(uint256 _indexProject) public {
         // TODO: return funds
         projects[_indexProject].projectState = ProjectState.Aborted;
+    }
+
+    function onlyAdmin() private view {
+        ProjectLibrary.onlyAdmin(owner());
     }
 
     // /**
