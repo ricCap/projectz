@@ -17,7 +17,7 @@ abstract contract DefaultProjectTemplate is ERC721, ERC721Enumerable, Ownable {
 
     event ProjectMinted(string name_, string symbol_, uint256 _projectIndex);
 
-    Counters.Counter private _tokenIdCounter;
+    Counters.Counter internal _tokenIdCounter;
 
     // solhint-disable-next-line no-empty-blocks
     constructor(string memory name_, string memory symbol_) ERC721(name_, symbol_) {}
