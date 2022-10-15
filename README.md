@@ -29,7 +29,7 @@ You can ensure to run all mandatory tasks included in the ci (i.e., `npm run all
 
 To run hardhat test you can run `npm run test`. You can also run the tests again testnet by running `npm run test:testnet` (this will run against the Alfajores testnet, make sure to have the .env file correctly configured.).
 
-To run integration tests, make sure to copy the `.accounts-template` to `.accounts` and add a list of accounts that can be used when spinning up ganache. You will need to include these accounts in your `hardhat.config.ts` as well. Once this is done, start the ganache server with `npm run ganache` and then in another console run `npm run test:integration`.
+To run integration tests, make sure to copy the `.accounts-template` to `.accounts` and add a list of accounts (at least 4) that can be used when spinning up ganache. You will need to include these accounts in your `hardhat.config.ts` as well. Once this is done, start the ganache server with `npm run ganache` and then in another console run `npm run test:integration`.
 
 Typechains are build for:
 
