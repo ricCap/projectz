@@ -1,11 +1,5 @@
 {
-  "Manager": "0xef1c2e8c70F6F1C9A99B2abF574f57e9B7B91767",
-  "ExampleProjectTemplate": {
-    "address": "0xb60915ad0064e45c3FB3151f82839722fF591A4c",
-    "iid": "0x5d608db9"
-  },
-  "MasterZTemplate": {
-    "address": "0x5358E3E5Aa362Ee8Ac44d4c6C2742de5C48994a9",
-    "iid": "0x12f060e7"
-  }
+  "Manager": "0x03B0fE23fe7f6D0FD7cc65732e43a98EaA1E9BAd",
+  "ExampleProjectTemplate": "0x0AABc860953A8B389dD1B6Ef080AB31D226144f4",
+  "MasterZTemplate": "0xec97DDc6FCBDb46b254C26Af386DD0c3C99dA0C3"
 }

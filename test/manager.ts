@@ -3,13 +3,11 @@ import { ethers } from 'hardhat'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import '@nomiclabs/hardhat-ethers'
 
-import IProjectTemplateABI from '../artifacts/contracts/projects/IProjectTemplate.sol/IProjectTemplate.json'
-import IExampleProjectTemplateABI from '../artifacts/contracts/projects/ExampleProjectTemplate.sol/ExampleProjectTemplate.json'
+import ExampleProjectTemplateABI from '../artifacts/contracts/projects/ExampleProjectTemplate.sol/ExampleProjectTemplate.json'
 
-import { IProjectTemplate } from '../typechain-types'
 import { Manager } from '../typechain-types/Manager'
-import { ExampleProjectTemplate, IExampleProjectTemplate } from '../typechain-types/projects/ExampleProjectTemplate.sol'
-import { ProjectStruct } from '../typechain-types/projects/ExampleProjectTemplate.sol/IExampleProjectTemplate'
+import { ExampleProjectTemplate } from '../typechain-types/projects/ExampleProjectTemplate.sol'
+import { ProjectStruct } from '../typechain-types/projects/ExampleProjectTemplate.sol/ExampleProjectTemplate'
 
 describe('Manager', function () {
   this.timeout(50000)
@@ -71,14 +69,9 @@ describe('Manager', function () {
       'deployed template differs from expected exampleProjectTemplate',
     )
 
-    // TODO Check the template implements the correct interfaces
-    const contractAsIProjectTemplate = new ethers.Contract(
-      exampleProjectTemplateContract.address,
-      IProjectTemplateABI.abi,
-    ) as IProjectTemplate
     const contractAsExampleProjectTemplate = new ethers.Contract(
       exampleProjectTemplateContract.address,
-      IExampleProjectTemplateABI.abi,
+      ExampleProjectTemplateABI.abi,
     ) as ExampleProjectTemplate
 
     // Test creating a project

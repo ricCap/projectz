@@ -3,11 +3,11 @@
 pragma solidity ^0.8.17;
 
 import "../Manager.sol";
-import "./IProjectTemplate.sol";
 import "./DefaultProjectTemplate.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./ProjectsLibrary.sol";
+import "hardhat/console.sol";
 
 // enums
 enum CheckpointState {
@@ -43,18 +43,8 @@ struct Project {
     uint256 activeCheckpoint;
 }
 
-interface IMasterZTemplate {
-    function safeMint(address _partecipantAddress, uint256 _fundingDurationInDays)
-        external
-        returns (uint256 _indexProject);
-
-    function listProjects() external view returns (Project[] memory);
-
-    function iId() external pure returns (bytes4);
-}
-
 /** @dev Default project template for masterZ */
-contract MasterZTemplate is DefaultProjectTemplate, IMasterZTemplate {
+contract MasterZTemplate is DefaultProjectTemplate {
     using SafeMath for uint256;
 
     /////// variables ///////
@@ -97,7 +87,7 @@ contract MasterZTemplate is DefaultProjectTemplate, IMasterZTemplate {
     }
 
     function safeMint() public pure override returns (uint256) {
-        revert("Call safeMint([string,string]) instead");
+        revert("Call safeMint([string,string])");
     }
 
     function safeMint(address _partecipantAddress, uint256 _fundingDurationInDays)
@@ -136,14 +126,6 @@ contract MasterZTemplate is DefaultProjectTemplate, IMasterZTemplate {
     }
 
     /**
-     *  @dev See {IERC165-supportsInterface}.
-     *  TODO: Create interface masterZTemplate
-     */
-    function supportsInterface(bytes4 interfaceId) public view virtual override(DefaultProjectTemplate) returns (bool) {
-        return interfaceId == type(IMasterZTemplate).interfaceId || super.supportsInterface(interfaceId);
-    }
-
-    /**
      *  Receive funds
      *  // TODO: add buffer fee
      *  // TODO: add hardcap per project
@@ -175,6 +157,8 @@ contract MasterZTemplate is DefaultProjectTemplate, IMasterZTemplate {
      *  TODO: check balance payment splitter
      */
     function _checkIfHardCapReached(uint256 _indexProject) private {
+        console.log(funds[_indexProject]);
+        console.log(hardCaps[_indexProject]);
         if (funds[_indexProject] > hardCaps[_indexProject]) {
             projects[_indexProject].projectState = ProjectState.WaitingToStart;
             emit ProjectWaitingToStart(_indexProject);
@@ -302,9 +286,5 @@ contract MasterZTemplate is DefaultProjectTemplate, IMasterZTemplate {
 
     function _getAddress(uint256 _index) internal view returns (address) {
         return partnerAddressBook[_index];
-    }
-
-    function iId() external pure override returns (bytes4) {
-        return type(IMasterZTemplate).interfaceId;
     }
 }

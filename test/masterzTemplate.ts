@@ -3,7 +3,7 @@ import { ethers } from 'hardhat'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 
 import { Manager } from '../typechain-types/Manager'
-import { MasterZTemplate } from '../typechain-types/projects/MasterZTemplate.sol'
+import { MasterZTemplate } from '../typechain-types/projects/MasterZTemplate'
 import { BigNumber } from '@ethersproject/bignumber'
 
 import * as Kit from '@celo/contractkit'

@@ -2,14 +2,13 @@ import { Accessor, Component, createResource, createSignal, For, mergeProps, Set
 
 import MasterZTemplateABI from '../../../artifacts/contracts/projects/MasterZTemplate.sol/MasterZTemplate.json'
 import * as masterzTemplate from '../../../typechain-types/projects/MasterZTemplate'
-import { MasterZTemplate } from '../../types/contracts/projects/MasterZTemplate.sol/MasterZTemplate'
+import { MasterZTemplate } from '../../types/contracts/projects/MasterZTemplate'
 import { kit } from '../Navbar'
-import { masterzProject } from './ExampleProject'
 import { ProjectsProps } from './ProjectTemplate'
 import * as constants from '../constants'
 
 export const MasterZProjectTable: Component<ProjectsProps> = props => {
-  const [selectedProject, setSelectedProject] = createSignal<masterzTemplate.MasterZTemplate.ProjectStruct>()
+  const [selectedProject, setSelectedProject] = createSignal<masterzTemplate.ProjectStruct>()
   const [selectedProjectIndex, setSelectedProjectIndex] = createSignal<number>()
   const [projects, { refetch }] = createResource(props.selectedTemplate(), fetchProjects)
 
@@ -17,7 +16,7 @@ export const MasterZProjectTable: Component<ProjectsProps> = props => {
     <div>
       <div class="grid md:grid-cols-3">
         <For each={projects()}>
-          {(project: masterzTemplate.MasterZTemplate.ProjectStruct, index: Accessor<number>) => (
+          {(project: masterzTemplate.ProjectStruct, index: Accessor<number>) => (
             <Project
               project={project}
               projectIndex={index()}
@@ -40,9 +39,7 @@ export const MasterZProjectTable: Component<ProjectsProps> = props => {
     </div>
   )
 
-  async function fetchProjects(
-    templateAddress: string | undefined,
-  ): Promise<masterzTemplate.MasterZTemplate.ProjectStruct[]> {
+  async function fetchProjects(templateAddress: string | undefined): Promise<masterzTemplate.ProjectStruct[]> {
     if (props.connected() && templateAddress) {
       const contractAsMasterZTemplate = new kit.web3.eth.Contract(
         MasterZTemplateABI.abi as any,
@@ -53,7 +50,7 @@ export const MasterZProjectTable: Component<ProjectsProps> = props => {
         await contractAsMasterZTemplate.methods.listProjects().call()
       return output.map(value => {
         const checkpointsListAsTuple = value[5]
-        const checkpoints: masterzTemplate.MasterZTemplate.CheckpointStruct[] = []
+        const checkpoints: masterzTemplate.CheckpointStruct[] = []
         for (const checkpoint of checkpointsListAsTuple) {
           checkpoints.push({
             state: checkpoint[0],
@@ -80,10 +77,10 @@ export const MasterZProjectTable: Component<ProjectsProps> = props => {
 }
 
 export const Project: Component<{
-  project: masterzTemplate.MasterZTemplate.ProjectStruct
+  project: masterzTemplate.ProjectStruct
   projectIndex: number
-  selectedProject: Accessor<masterzTemplate.MasterZTemplate.ProjectStruct | undefined>
-  setSelectedProject: Setter<masterzTemplate.MasterZTemplate.ProjectStruct>
+  selectedProject: Accessor<masterzTemplate.ProjectStruct | undefined>
+  setSelectedProject: Setter<masterzTemplate.ProjectStruct>
   selectedProjectIndex: Accessor<number | undefined>
   setSelectedProjectIndex: Setter<number | undefined>
 }> = props => {
@@ -107,11 +104,11 @@ export const Project: Component<{
 
 export const ProjectDetails: Component<
   ProjectsProps & {
-    selectedProject: Accessor<masterzTemplate.MasterZTemplate.ProjectStruct | undefined>
+    selectedProject: Accessor<masterzTemplate.ProjectStruct | undefined>
     selectedProjectIndex: Accessor<number | undefined>
   }
 > = props => {
-  const [selectedCheckpoint, setSelectedCheckpoint] = createSignal<masterzTemplate.MasterZTemplate.CheckpointStruct>()
+  const [selectedCheckpoint, setSelectedCheckpoint] = createSignal<masterzTemplate.CheckpointStruct>()
 
   const [projectBalance, _] = createResource(async () => {
     const cUSDtoken = await kit.contracts.getStableToken()
@@ -159,7 +156,7 @@ export const ProjectDetails: Component<
   }
 
   return (
-    <div class="bg-blue-100">
+    <div class="bg-blue-100 m-6">
       <div class="flex">
         <div class="m-4 text-center">
           <img
@@ -213,7 +210,7 @@ export const ProjectDetails: Component<
       <div class="flex">
         <div class="m-2">
           <For each={props.selectedProject()!.checkpoints}>
-            {(checkpoint: masterzTemplate.MasterZTemplate.CheckpointStruct) => (
+            {(checkpoint: masterzTemplate.CheckpointStruct) => (
               <Checkpoint
                 checkpoint={checkpoint}
                 selectedCheckpoint={selectedCheckpoint}
@@ -229,9 +226,9 @@ export const ProjectDetails: Component<
 }
 
 const Checkpoint: Component<{
-  checkpoint: masterzTemplate.MasterZTemplate.CheckpointStruct
-  selectedCheckpoint: Accessor<masterzTemplate.MasterZTemplate.CheckpointStruct | undefined>
-  setSelectedCheckpoint: Setter<masterzTemplate.MasterZTemplate.CheckpointStruct>
+  checkpoint: masterzTemplate.CheckpointStruct
+  selectedCheckpoint: Accessor<masterzTemplate.CheckpointStruct | undefined>
+  setSelectedCheckpoint: Setter<masterzTemplate.CheckpointStruct>
 }> = props => {
   return (
     <div>
@@ -259,7 +256,7 @@ const Checkpoint: Component<{
 }
 
 const CheckpointDetails: Component<{
-  selectedCheckpoint: Accessor<masterzTemplate.MasterZTemplate.CheckpointStruct | undefined>
+  selectedCheckpoint: Accessor<masterzTemplate.CheckpointStruct | undefined>
 }> = props => {
   return (
     <Show when={props.selectedCheckpoint()}>
