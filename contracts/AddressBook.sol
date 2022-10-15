@@ -16,7 +16,70 @@ contract AddressBook is AccessControl {
     bytes32 public constant PARTICIPANT_ROLE = keccak256("PARTICIPANT_ROLE");
     bytes32 public constant DONOR_ROLE = keccak256("DONOR_ROLE");
 
+    bytes32 public constant MANAGER_PARTNER_ROLE = keccak256("MANAGER_PARTNER_ROLE");
+    bytes32 public constant MANAGER_PARTICIPANT_ROLE = keccak256("MANAGER_PARTICIPANT_ROLE");
+    bytes32 public constant MANAGER_DONOR_ROLE = keccak256("MANAGER_DONOR_ROLE");
+
+    // variables
+    mapping(uint256 => address) private userIdToAddress;
+    mapping(address => uint256) private addressToUserId;
+    uint256 private numberOfUsers;
+
+    // events
+    event UserAdded(uint256 _userId, address _address);
+    event UserAddressUpdated(uint256 _userId, address _address, address _newAddress);
+
     constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        addUser(msg.sender);
+    }
+
+    function addUser(address _address) public {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "only admin can add users");
+        userIdToAddress[numberOfUsers] = _address;
+        addressToUserId[_address] = numberOfUsers;
+        numberOfUsers++;
+        emit UserAdded(numberOfUsers - 1, _address);
+    }
+
+    function getAddress(uint256 _userId) public view returns (address) {
+        require(_userId < numberOfUsers, "user does not exist");
+        return userIdToAddress[_userId];
+    }
+
+    function getUserId(address _address) public view returns (uint256 result) {
+        result = addressToUserId[_address];
+        if (result == 0) {
+            require(hasRole(DEFAULT_ADMIN_ROLE, _address), "unkown user");
+        }
+    }
+
+    function updateAddress(address _newAddress) external {
+        return _updateAddress(getUserId(msg.sender), _newAddress);
+    }
+
+    function _updateAddress(uint256 _userId, address _newAddress) private {
+        require(getAddress(_userId) == msg.sender, "you can only update your own address");
+
+        _delegateRole(DEFAULT_ADMIN_ROLE, _newAddress);
+        _delegateRole(PARTNER_ROLE, _newAddress);
+        _delegateRole(PARTICIPANT_ROLE, _newAddress);
+        _delegateRole(DONOR_ROLE, _newAddress);
+        _delegateRole(MANAGER_PARTNER_ROLE, _newAddress);
+        _delegateRole(MANAGER_PARTICIPANT_ROLE, _newAddress);
+        _delegateRole(MANAGER_DONOR_ROLE, _newAddress);
+
+        addressToUserId[_newAddress] = _userId;
+        userIdToAddress[_userId] = _newAddress;
+        addressToUserId[msg.sender] = 0;
+
+        emit UserAddressUpdated(_userId, msg.sender, _newAddress);
+    }
+
+    function _delegateRole(bytes32 _role, address _newAddress) private {
+        if (hasRole(_role, msg.sender)) {
+            renounceRole(_role, msg.sender);
+            _grantRole(_role, _newAddress);
+        }
     }
 }
