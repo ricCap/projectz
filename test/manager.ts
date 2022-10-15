@@ -10,7 +10,6 @@ import { Manager } from '../typechain-types/Manager'
 import { ExampleProjectTemplate } from '../typechain-types/projects/ExampleProjectTemplate.sol'
 import { ProjectStruct } from '../typechain-types/projects/ExampleProjectTemplate.sol/ExampleProjectTemplate'
 
-/*
 describe('Manager', function () {
   this.timeout(50000)
 
@@ -98,4 +97,3 @@ describe('Manager', function () {
     ).to.deep.equal([project])
   })
 })
-*/
