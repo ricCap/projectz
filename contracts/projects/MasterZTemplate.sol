@@ -79,9 +79,9 @@ contract MasterZTemplate is DefaultProjectTemplate {
     constructor() DefaultProjectTemplate("MasterZTemplate", "MASTERZ") {
         // define addresses
         // TODO: create an address book contract
-        partnerAddressBook[0] = address(0x11111);
-        partnerAddressBook[1] = address(0x22222);
-        partnerAddressBook[2] = address(0x33333);
+        partnerAddressBook[0] = address(0x1111111111111111111111111111111111111111);
+        partnerAddressBook[1] = address(0x2222222222222222222222222222222222222222);
+        partnerAddressBook[2] = address(0x3333333333333333333333333333333333333333);
 
         // add other variables
         info = "Re-evaluate x";
@@ -111,7 +111,13 @@ contract MasterZTemplate is DefaultProjectTemplate {
         project.projectState = ProjectState.Fundraising;
         project.activeCheckpoint = 0;
         project.checkpoints.push(
-            Checkpoint(CheckpointState.WaitingInitialization, "Checkpoint title", "Follow 80% of courses.", 1, 0)
+            Checkpoint(CheckpointState.WaitingInitialization, "Checkpoint title", "Follow 80% of courses.", 1 wei, 0)
+        );
+        project.checkpoints.push(
+            Checkpoint(CheckpointState.WaitingInitialization, "Checkpoint title", "Pass team project.", 2 wei, 0)
+        );
+        project.checkpoints.push(
+            Checkpoint(CheckpointState.WaitingInitialization, "Checkpoint title", "Pass final exam.", 2 wei, 0)
         );
 
         hardCaps[_indexProject] = 5 wei;
@@ -209,55 +215,51 @@ contract MasterZTemplate is DefaultProjectTemplate {
      *  Start specified checkpoint with pull payment request
      */
     function startCheckPoint(uint256 _indexProject) public onlyState(ProjectState.InProgress, _indexProject) {
-        onlyAdmin();
         projectExists(_indexProject);
-        uint256 _activeCheckpoint = projects[_indexProject].activeCheckpoint;
 
-        // check correct checkpoint
+        // gather partner address and active checkpoint
+        uint256 _activeCheckpoint = projects[_indexProject].activeCheckpoint;
+        address payable _partnerAddress = payable(
+            _getAddress(projects[_indexProject].checkpoints[_activeCheckpoint].partnerID)
+        );
+
+        // check if I am allowed to start a transaction and if the checkpoint is ready
+        require(
+            ProjectLibrary.isAdmin(owner()) || (ProjectLibrary.isPartner(owner()) && msg.sender == _partnerAddress),
+            "Sender is not due any payment."
+        );
         require(
             projects[_indexProject].checkpoints[_activeCheckpoint].state == CheckpointState.WaitingToStart,
             "Checkpoint not ready to start"
         );
 
-        // check partner address
-        address payable _partnerAddress = payable(
-            _getAddress(projects[_indexProject].checkpoints[_activeCheckpoint].partnerID)
-        );
-        require(_partnerAddress == msg.sender || msg.sender == this.owner(), "Sender is not due any payment.");
-
-        // If I am the partner, or the owner of the contract, I can start the project and activate the payment
+        // start checkpoint
+        projects[_indexProject].checkpoints[_activeCheckpoint].state = CheckpointState.InProgress;
         require(
-            IERC20(cUSDContract).transferFrom(
-                address(this),
-                _partnerAddress,
-                projects[_indexProject].checkpoints[_activeCheckpoint].cost
-            ),
+            IERC20(cUSDContract).transfer(_partnerAddress, projects[_indexProject].checkpoints[_activeCheckpoint].cost),
             "Payment has failed."
         );
-
-        // emit a partner paid event
         emit PartnerPaid(_partnerAddress, _activeCheckpoint, _indexProject);
-        projects[_indexProject].checkpoints[_activeCheckpoint].state = CheckpointState.InProgress;
     }
 
     /**
      *  Set a checkpoint as finished and start the next one.
      */
-    // function finishCheckpoint(uint256 _indexProject) public onlyState(ProjectState.InProgress, _indexProject) {
-    //     onlyAdmin()
+    function finishCheckpoint(uint256 _indexProject) public onlyState(ProjectState.InProgress, _indexProject) {
+        onlyAdmin();
+        projectExists(_indexProject);
 
-    //     // approve current checkpoint
-    //     projects[_indexProject].checkpoints[projects[_indexProject].activeCheckpoint].state
-    //         = CheckpointState.Finished;
+        // approve current checkpoint
+        projects[_indexProject].checkpoints[projects[_indexProject].activeCheckpoint].state = CheckpointState.Finished;
 
-    //     // activate next checkpoint
-    //     projects[_indexProject].activeCheckpoint++;
-    //     if (projects[_indexProject].activeCheckpoint == projects[_indexProject].checkpoints.length) {
-    //         projects[_indexProject].projectState = ProjectState.Finished;
-    //     } else {
-    //         initializeCheckPoint(projects[_indexProject].activeCheckpoint, _indexProject);
-    //     }
-    // }
+        // activate next checkpoint
+        projects[_indexProject].activeCheckpoint++;
+        if (projects[_indexProject].activeCheckpoint == projects[_indexProject].checkpoints.length) {
+            projects[_indexProject].projectState = ProjectState.Finished;
+        } else {
+            initializeCheckPoint(projects[_indexProject].activeCheckpoint, _indexProject);
+        }
+    }
 
     function projectExists(uint256 _indexProject) internal view {
         require(_indexProject < _tokenIdCounter.current(), "project does not exist");

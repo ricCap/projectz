@@ -12,12 +12,19 @@ library ProjectLibrary {
     event PartnerPaid(address partner, uint256 checkpointID, uint256 indexProject);
     event ProjectWaitingToStart(uint256 indexProject);
 
-    function onlyAdmin(address _addressBookAddress) external view {
-        Manager _manager = Manager(_addressBookAddress);
+    function onlyAdmin(address _managerAddress) external view {
+        require(isAdmin(_managerAddress), "only DEFAULT_ADMIN_ROLE can create templates");
+    }
+
+    function isAdmin(address _managerAddress) public view returns (bool) {
+        Manager _manager = Manager(_managerAddress);
         AddressBook _addressBook = AddressBook(_manager.addressBookAddress());
-        require(
-            _addressBook.hasRole(_addressBook.DEFAULT_ADMIN_ROLE(), msg.sender),
-            "only DEFAULT_ADMIN_ROLE can create templates"
-        );
+        return _addressBook.hasRole(_addressBook.DEFAULT_ADMIN_ROLE(), msg.sender);
+    }
+
+    function isPartner(address _managerAddress) public view returns (bool) {
+        Manager _manager = Manager(_managerAddress);
+        AddressBook _addressBook = AddressBook(_manager.addressBookAddress());
+        return _addressBook.hasRole(_addressBook.PARTNER_ROLE(), msg.sender);
     }
 }
