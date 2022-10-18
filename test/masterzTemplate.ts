@@ -9,8 +9,7 @@ import hre from 'hardhat'
 import { AddressBook } from '../typechain-types/AddressBook'
 import { Manager } from '../typechain-types/Manager'
 import { MasterZTemplate } from '../typechain-types/projects/MasterZTemplate'
-import { ProjectLibrary } from '../typechain-types/projects/ProjectsLibrary.sol/ProjectLibrary'
-import { privateEncrypt } from 'crypto'
+import { AddressBookLibrary } from '../typechain-types/addressBook/AddressBookLibrary'
 
 /** Conditional tests */
 const itIf = (condition: boolean) => (condition ? it : it.skip)
@@ -30,20 +29,20 @@ describe('MasterZTemplate', function () {
     const addressBook = (await addressBookFactory.deploy()) as AddressBook
     await addressBook.deployed()
 
+    // deploy address book library
+    const addressBookLibraryFactory = await ethers.getContractFactory('AddressBookLibrary')
+    const addressBookLibraryContract = await addressBookLibraryFactory.deploy()
+    await addressBookLibraryContract.deployed()
+
     // deploy manager
     const managerFactory = await ethers.getContractFactory('Manager')
     managerContract = (await managerFactory.deploy(addressBook.address)) as Manager
     await managerContract.deployed()
 
-    // deploy library
-    const projectLibraryFactory = await ethers.getContractFactory('ProjectLibrary')
-    const projectLibraryContract = (await projectLibraryFactory.deploy()) as ProjectLibrary
-    await projectLibraryContract.deployed()
-
     // deploy MasterZTemplate
     const masterzTemplateFactory = await ethers.getContractFactory('MasterZTemplate', {
       libraries: {
-        ProjectLibrary: projectLibraryContract.address,
+        AddressBookLibrary: addressBookLibraryContract.address,
       },
     })
     masterzTemplateContract = (await masterzTemplateFactory.deploy()) as MasterZTemplate

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-import "../Manager.sol";
-import "../AddressBook.sol";
+import "../IManager.sol";
+import "../addressBook/IAddressBook.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";

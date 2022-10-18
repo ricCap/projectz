@@ -31,11 +31,34 @@ contract AddressBook is AccessControl {
 
     constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        addUser(msg.sender);
+        _grantRole(MANAGER_PARTNER_ROLE, msg.sender);
+        _grantRole(MANAGER_PARTICIPANT_ROLE, msg.sender);
+        _grantRole(MANAGER_DONOR_ROLE, msg.sender);
+        _setRoleAdmin(MANAGER_PARTNER_ROLE, DEFAULT_ADMIN_ROLE);
+        _setRoleAdmin(MANAGER_PARTICIPANT_ROLE, DEFAULT_ADMIN_ROLE);
+        _setRoleAdmin(MANAGER_DONOR_ROLE, DEFAULT_ADMIN_ROLE);
+        _setRoleAdmin(PARTNER_ROLE, MANAGER_PARTNER_ROLE);
+        _setRoleAdmin(PARTICIPANT_ROLE, MANAGER_PARTICIPANT_ROLE);
+        _setRoleAdmin(DONOR_ROLE, MANAGER_DONOR_ROLE);
+        _addUser(msg.sender);
+    }
+
+    function userExists(address _address) public view returns (bool) {
+        uint256 _userId = addressToUserId[_address];
+        if (_userId == 0) {
+            // only the DEFAULT_ADMIN_ROLE can have index 0
+            return hasRole(DEFAULT_ADMIN_ROLE, _address);
+        }
+        return true;
     }
 
     function addUser(address _address) public {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "only admin can add users");
+        require(!userExists(_address), "user with this account already exists");
+        _addUser(_address);
+    }
+
+    function _addUser(address _address) private {
         userIdToAddress[numberOfUsers] = _address;
         addressToUserId[_address] = numberOfUsers;
         numberOfUsers++;
