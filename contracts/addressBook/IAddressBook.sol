@@ -33,4 +33,6 @@ interface IAddressBook is IAccessControl {
     function getUserId(address _address) external view returns (uint256 result);
 
     function updateAddress(address _newAddress) external;
+
+    function userExists(address _address) external view returns (bool);
 }

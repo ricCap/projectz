@@ -159,7 +159,9 @@ contract MasterZTemplate is DefaultProjectTemplate {
             _checkIfFundingExpired(_indexProject);
         }
 
-        //AddressBookLibrary.addDonor(owner(), msg.sender);
+        if (!AddressBookLibrary.userExists(owner(), msg.sender)) {
+            AddressBookLibrary.addDonor(owner(), msg.sender);
+        }
     }
 
     /**

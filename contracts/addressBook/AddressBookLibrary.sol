@@ -48,4 +48,10 @@ library AddressBookLibrary {
         _addressBook.addUser(_userAddress);
         _addressBook.grantRole(_addressBook.PARTNER_ROLE(), _userAddress);
     }
+
+    function userExists(address _managerAddress, address _userAddress) public view returns (bool) {
+        IManager _manager = IManager(_managerAddress);
+        IAddressBook _addressBook = IAddressBook(_manager.addressBookAddress());
+        return _addressBook.userExists(_userAddress);
+    }
 }
