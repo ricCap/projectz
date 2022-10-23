@@ -61,6 +61,7 @@ contract MasterZTemplate is DefaultProjectTemplate {
     mapping(uint256 => address) internal partnerAddressBook;
 
     /////// modifiers ///////
+    // TODO: Create a separate function rather than a modifier -> weights less
     modifier onlyState(ProjectState _state, uint256 _indexProject) {
         require(projects[_indexProject].projectState == _state, "PS not correct");
         _;
@@ -279,17 +280,11 @@ contract MasterZTemplate is DefaultProjectTemplate {
         AddressBookLibrary.onlyAdmin(owner());
     }
 
-    // /**
-    //  *  Getter functions
-    //  */
-    // function getCurrentCheckpoint(uint256 _indexProject) public view returns (Checkpoint memory) {
-    //     return projects[_indexProject].checkpoints[projects[_indexProject].activeCheckpoint];
-    // }
-
     function getInfo() public view returns (string memory) {
         return info;
     }
 
+    // TODO: Remove and change tests
     function getProjectStatus(uint256 _indexProject) public view returns (ProjectState) {
         return projects[_indexProject].projectState;
     }
