@@ -13,6 +13,37 @@ import { MasterZTemplate } from '../../types/contracts/projects/MasterZTemplate'
 
 import * as constants from '../constants'
 
+const projectExample = {
+  projectState: 0,
+  title: 'Title',
+  description: 'Description',
+  partecipant: '0x0000000000000000000000000000',
+  deadline: 1_000_000_000_000,
+  checkpoints: [
+    {
+      state: 0,
+      title: 'Checkpoint title',
+      description: 'Follow 80% of courses.',
+      cost: 1,
+      partnerID: 0,
+    },
+    {
+      state: 0,
+      title: 'Checkpoint title',
+      description: 'Pass team project.',
+      cost: 2,
+      partnerID: 1,
+    },
+    {
+      state: 0,
+      title: 'Checkpoint title',
+      description: 'Pass final exam.',
+      cost: 2,
+      partnerID: 2,
+    },
+  ],
+  activeCheckpoint: 0,
+}
 export interface ProjectsProps extends ConnectionProps {
   selectedTemplate: Accessor<string | undefined>
   setSelectedTemplate: Setter<string | undefined>
@@ -73,9 +104,9 @@ export const ProjectTemplate: Component<ProjectTemplateProps> = props => {
         MasterZTemplateABI.abi as any,
         address,
       ) as unknown as MasterZTemplate
-      const receipt = await contractAsMasterZTemplate.methods['safeMint(address,uint256)'](
-        '0x0000000000000000000000000000000000000000',
-        1,
+      const receipt = await contractAsMasterZTemplate
+      .methods['safeMint((uint8,string,string,address,uint256,(uint8,string,string,uint256,uint256)[],uint256))'](
+        projectExample
       ).send({
         from: kit.defaultAccount,
       })
@@ -98,7 +129,7 @@ export const ProjectTemplate: Component<ProjectTemplateProps> = props => {
         MasterZTemplateABI.abi as any,
         address,
       ) as unknown as MasterZTemplate
-      return await contractAsMasterZTemplate.methods.getInfo().call()
+      return await contractAsMasterZTemplate.methods.info().call()
     } else {
       return 'Unknown template'
     }

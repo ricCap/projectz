@@ -51,21 +51,14 @@ contract MasterZTemplate is DefaultProjectTemplate {
     /////// variables ///////
     address internal cUSDContract = 0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1;
     string public info;
+    uint256 public hardCap;
 
     mapping(uint256 => Project) internal projects;
-    mapping(uint256 => uint256) public hardCaps;
     mapping(uint256 => uint256) public funds;
     mapping(uint256 => mapping(address => uint256)) internal contributions;
 
     // TODO: create a real address book contract
     mapping(uint256 => address) internal partnerAddressBook;
-
-    /////// modifiers ///////
-    // TODO: Create a separate function rather than a modifier -> weights less
-    modifier onlyState(ProjectState _state, uint256 _indexProject) {
-        require(projects[_indexProject].projectState == _state, "PS not correct");
-        _;
-    }
 
     /////// Events ////////
     event FundingReceived(address contributor, uint256 amount, uint256 currentTotal, uint256 indexProject);
@@ -77,7 +70,7 @@ contract MasterZTemplate is DefaultProjectTemplate {
      *  Contract constructor.
      *  Defines all the checkpoints that this contract must contains.
      */
-    constructor() DefaultProjectTemplate("MasterZTemplate", "MASTERZ") {
+    constructor(string memory _info, uint256 _hardCap) DefaultProjectTemplate("MasterZTemplate", "MASTERZ") {
         // define addresses
         // TODO: create an address book contract
         partnerAddressBook[0] = address(0x1111111111111111111111111111111111111111);
@@ -85,43 +78,22 @@ contract MasterZTemplate is DefaultProjectTemplate {
         partnerAddressBook[2] = address(0x3333333333333333333333333333333333333333);
 
         // add other variables
-        info = "Re-evaluate x";
+        info = _info;
+        hardCap = _hardCap;
     }
 
     function safeMint() public pure override returns (uint256) {
         revert("Call safeMint([string,string])");
     }
 
-    function safeMint(address _partecipantAddress, uint256 _fundingDurationInDays)
-        public
-        returns (uint256 _indexProject)
-    {
+    function safeMint(Project calldata _project) public returns (uint256 _indexProject) {
         onlyAdmin();
         _indexProject = super.safeMint();
 
-        uint256 _deadline = block.timestamp.add(_fundingDurationInDays.mul(1 days));
-
         // define new project
-        // TODO: check deepcopy checkpoints
-        // checkpoints
-        Project storage project = projects[_indexProject];
-        project.title = "Title";
-        project.description = "Description";
-        project.deadline = _deadline;
-        project.partecipant = _partecipantAddress;
-        project.projectState = ProjectState.Fundraising;
-        project.activeCheckpoint = 0;
-        project.checkpoints.push(
-            Checkpoint(CheckpointState.WaitingInitialization, "Checkpoint title", "Follow 80% of courses.", 1 wei, 0)
-        );
-        project.checkpoints.push(
-            Checkpoint(CheckpointState.WaitingInitialization, "Checkpoint title", "Pass team project.", 2 wei, 0)
-        );
-        project.checkpoints.push(
-            Checkpoint(CheckpointState.WaitingInitialization, "Checkpoint title", "Pass final exam.", 2 wei, 0)
-        );
+        projects[_indexProject] = _project;
 
-        hardCaps[_indexProject] = 5 wei;
+        return _indexProject;
     }
 
     function listProjects() public view returns (Project[] memory) {
@@ -135,19 +107,14 @@ contract MasterZTemplate is DefaultProjectTemplate {
 
     /**
      *  Receive funds
-     *  // TODO: add buffer fee
-     *  // TODO: add hardcap per project
-     *  // TODO: refund
-     *  // check different require
+     *  // TODO: refund in case of abortion
      */
-    function donate(uint256 _indexProject, uint256 _amount)
-        external
-        payable
-        onlyState(ProjectState.Fundraising, _indexProject)
-    {
+    function donate(uint256 _indexProject, uint256 _amount) external payable {
         projectExists(_indexProject);
-        // TODO: check https://blog.openzeppelin.com/reentrancy-after-istanbul/
-        require(IERC20(cUSDContract).transferFrom(msg.sender, address(this), _amount), "Donation Failed");
+        onlyState(ProjectState.Fundraising, _indexProject);
+
+        // check contribution
+        require(funds[_indexProject].add(_amount) <= hardCap, "Donation exceeds hardCap");
 
         // save contribution
         contributions[_indexProject][msg.sender] = contributions[_indexProject][msg.sender].add(_amount);
@@ -163,6 +130,9 @@ contract MasterZTemplate is DefaultProjectTemplate {
         if (!AddressBookLibrary.userExists(owner(), msg.sender)) {
             AddressBookLibrary.addDonor(owner(), msg.sender);
         }
+
+        // to the bottom for reentracy problems
+        require(IERC20(cUSDContract).transferFrom(msg.sender, address(this), _amount), "Donation Failed");
     }
 
     /**
@@ -170,7 +140,7 @@ contract MasterZTemplate is DefaultProjectTemplate {
      *  TODO: check balance payment splitter
      */
     function _checkIfHardCapReached(uint256 _indexProject) private {
-        if (funds[_indexProject] > hardCaps[_indexProject]) {
+        if (funds[_indexProject] == hardCap) {
             projects[_indexProject].projectState = ProjectState.WaitingToStart;
             emit ProjectWaitingToStart(_indexProject);
         }
@@ -188,9 +158,10 @@ contract MasterZTemplate is DefaultProjectTemplate {
     /**
      *  Start project once fundraising has finished
      */
-    function startProject(uint256 _indexProject) public onlyState(ProjectState.WaitingToStart, _indexProject) {
+    function startProject(uint256 _indexProject) public {
         onlyAdmin();
         projectExists(_indexProject);
+        onlyState(ProjectState.WaitingToStart, _indexProject);
 
         // start project
         projects[_indexProject].projectState = ProjectState.InProgress;
@@ -203,12 +174,10 @@ contract MasterZTemplate is DefaultProjectTemplate {
     /**
      *  Set checkpoint as ready to get a pull payment request
      */
-    function initializeCheckPoint(uint256 _indexCheckpoint, uint256 _indexProject)
-        internal
-        onlyState(ProjectState.InProgress, _indexProject)
-    {
+    function initializeCheckPoint(uint256 _indexCheckpoint, uint256 _indexProject) internal {
         onlyAdmin();
         projectExists(_indexProject);
+        onlyState(ProjectState.InProgress, _indexProject);
         require(
             projects[_indexProject].checkpoints[_indexCheckpoint].state == CheckpointState.WaitingInitialization,
             "Checkpoint not in the correct state"
@@ -219,8 +188,9 @@ contract MasterZTemplate is DefaultProjectTemplate {
     /**
      *  Start specified checkpoint with pull payment request
      */
-    function startCheckPoint(uint256 _indexProject) public onlyState(ProjectState.InProgress, _indexProject) {
+    function startCheckPoint(uint256 _indexProject) public {
         projectExists(_indexProject);
+        onlyState(ProjectState.InProgress, _indexProject);
 
         // gather partner address and active checkpoint
         uint256 _activeCheckpoint = projects[_indexProject].activeCheckpoint;
@@ -251,9 +221,10 @@ contract MasterZTemplate is DefaultProjectTemplate {
     /**
      *  Set a checkpoint as finished and start the next one.
      */
-    function finishCheckpoint(uint256 _indexProject) public onlyState(ProjectState.InProgress, _indexProject) {
+    function finishCheckpoint(uint256 _indexProject) public {
         onlyAdmin();
         projectExists(_indexProject);
+        onlyState(ProjectState.InProgress, _indexProject);
 
         // approve current checkpoint
         projects[_indexProject].checkpoints[projects[_indexProject].activeCheckpoint].state = CheckpointState.Finished;
@@ -274,19 +245,16 @@ contract MasterZTemplate is DefaultProjectTemplate {
     function abortProject(uint256 _indexProject) public {
         // TODO: return funds
         projects[_indexProject].projectState = ProjectState.Aborted;
+
+        // mapping(uint256 => mapping(address => uint256)) internal contributions;
     }
 
     function onlyAdmin() private view {
         AddressBookLibrary.onlyAdmin(owner());
     }
 
-    function getInfo() public view returns (string memory) {
-        return info;
-    }
-
-    // TODO: Remove and change tests
-    function getProjectStatus(uint256 _indexProject) public view returns (ProjectState) {
-        return projects[_indexProject].projectState;
+    function onlyState(ProjectState _state, uint256 _indexProject) private view {
+        require(projects[_indexProject].projectState == _state, "PS not correct");
     }
 
     function _getAddress(uint256 _index) internal view returns (address) {

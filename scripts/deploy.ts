@@ -44,7 +44,7 @@ async function main() {
       AddressBookLibrary: addressBookLibraryContract.address,
     },
   })
-  const masterzTemplateContract = await masterzTemplateFactory.deploy()
+  const masterzTemplateContract = await masterzTemplateFactory.deploy('info message', 5)
   await masterzTemplateContract.transferOwnership(managerContract.address)
   await (
     await addressBookContract.grantRole(await addressBookContract.MANAGER_DONOR_ROLE(), masterzTemplateContract.address)
