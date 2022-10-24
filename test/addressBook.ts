@@ -13,25 +13,35 @@ describe('AddressBook', function () {
   let addr1: SignerWithAddress
   let addr2: SignerWithAddress
 
-  this.beforeEach(async function () {
+  async function deployContract() {
     ;[owner, addr1, addr2] = await ethers.getSigners()
 
     // deploy address book
     const addressBookFactory = await ethers.getContractFactory('AddressBook')
     addressBookContract = (await addressBookFactory.deploy()) as AddressBook
     await addressBookContract.deployed()
-  })
+  }
 
   it('should grant contract deployer DEFAULT_ADMIN_ROLE role', async function () {
+    await deployContract()
     const defaultAdminRole = await addressBookContract.DEFAULT_ADMIN_ROLE()
     expect(await addressBookContract.hasRole(defaultAdminRole, owner.address)).to.equal(true)
   })
 
   describe('add user', function () {
+    this.beforeEach(deployContract)
+
     it('should allow DEFAULT_ADMIN_ROLE to add user', async function () {
       expect(await addressBookContract.addUser(addr1.address))
         .to.emit(addressBookContract, 'UserAdded')
         .withArgs(1, addr1.address)
+    })
+
+    it('should fail when trying to add the same address multiple times', async function () {
+      expect(async () => await addressBookContract.addUser(addr1.address))
+        .to.emit(addressBookContract, 'UserAdded')
+        .withArgs(1, addr1.address)
+      expect(await addressBookContract.addUser(addr1.address)).to.revertedWith('user with this account already exists')
     })
 
     it('should not allow non-DEFAULT_ADMIN_ROLE to add user', async function () {
@@ -42,6 +52,8 @@ describe('AddressBook', function () {
   })
 
   describe('get address', () => {
+    this.beforeEach(deployContract)
+
     it('should succeed for known address', async function () {
       expect(await addressBookContract.getAddress(0)).to.equals(owner.address)
     })
@@ -52,6 +64,8 @@ describe('AddressBook', function () {
   })
 
   describe('get user id', () => {
+    this.beforeEach(deployContract)
+
     it('should succeed for DEFAULT_ADMIN_USER', async function () {
       expect(await addressBookContract.getUserId(owner.address)).to.equals(0)
     })
@@ -67,6 +81,8 @@ describe('AddressBook', function () {
   })
 
   describe('update address', function () {
+    this.beforeEach(deployContract)
+
     it('allows user to update own address', async function () {
       await addressBookContract.addUser(addr1.address)
       expect(await addressBookContract.connect(addr1).updateAddress(addr2.address))

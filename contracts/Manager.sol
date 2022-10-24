@@ -2,15 +2,16 @@
 
 pragma solidity ^0.8.17;
 
-import "./AddressBook.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "./IManager.sol";
+import "./addressBook/AddressBookLibrary.sol";
+import "./addressBook/IAddressBook.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
 /**
  * Manager contract that owns the other parts of the application
  * @dev currently handles access control as well
  */
-contract Manager is IERC721Receiver {
+contract Manager is IManager, IERC721Receiver {
     // events
     event ProjectTemplateAdded(address _address, uint256 _index);
 
@@ -28,14 +29,20 @@ contract Manager is IERC721Receiver {
      * @param _address the address of the template
      */
     function addProjectTemplate(address _address) public returns (uint256 _index) {
-        AddressBook _addressBook = AddressBook(addressBookAddress);
+        IAddressBook _addressBook = IAddressBook(addressBookAddress);
         require(
             _addressBook.hasRole(_addressBook.DEFAULT_ADMIN_ROLE(), msg.sender),
             "only DEFAULT_ADMIN_ROLE can add project template"
         );
+        require(
+            _addressBook.hasRole(_addressBook.MANAGER_DONOR_ROLE(), _address),
+            "project templates should have MANAGER_DONOR_ROLE"
+        );
+
         // TODO check _address supports ERC721 interface and IProjectTemplate
         projectTemplateIDToAddress[projectTemplatesLength] = _address;
         projectTemplatesLength++;
+
         return projectTemplatesLength - 1;
     }
 

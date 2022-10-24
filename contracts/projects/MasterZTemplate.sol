@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.17;
 
-import "../Manager.sol";
+import "../IManager.sol";
 import "./DefaultProjectTemplate.sol";
-import "./ProjectLibrary.sol";
+import "../addressBook/AddressBookLibrary.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
@@ -159,6 +159,10 @@ contract MasterZTemplate is DefaultProjectTemplate {
         if (projects[_indexProject].projectState == ProjectState.Fundraising) {
             _checkIfFundingExpired(_indexProject);
         }
+
+        if (!AddressBookLibrary.userExists(owner(), msg.sender)) {
+            AddressBookLibrary.addDonor(owner(), msg.sender);
+        }
     }
 
     /**
@@ -226,7 +230,8 @@ contract MasterZTemplate is DefaultProjectTemplate {
 
         // check if I am allowed to start a transaction and if the checkpoint is ready
         require(
-            ProjectLibrary.isAdmin(owner()) || (ProjectLibrary.isPartner(owner()) && msg.sender == _partnerAddress),
+            AddressBookLibrary.isAdmin(owner()) ||
+                (AddressBookLibrary.isPartner(owner()) && msg.sender == _partnerAddress),
             "Sender is not due any payment."
         );
         require(
@@ -272,7 +277,7 @@ contract MasterZTemplate is DefaultProjectTemplate {
     }
 
     function onlyAdmin() private view {
-        ProjectLibrary.onlyAdmin(owner());
+        AddressBookLibrary.onlyAdmin(owner());
     }
 
     function getInfo() public view returns (string memory) {

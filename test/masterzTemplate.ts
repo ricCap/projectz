@@ -9,9 +9,9 @@ import hre from 'hardhat'
 import { AddressBook } from '../typechain-types/AddressBook'
 import { Manager } from '../typechain-types/Manager'
 import { MasterZTemplate } from '../typechain-types/projects/MasterZTemplate'
+import { AddressBookLibrary } from '../typechain-types/addressBook/AddressBookLibrary'
 import { ProjectLibrary } from '../typechain-types/projects/ProjectsLibrary.sol/ProjectLibrary'
 import { privateEncrypt } from 'crypto'
-import { profileEnd } from 'console'
 
 /** Conditional tests */
 const itIf = (condition: boolean) => (condition ? it : it.skip)
@@ -28,26 +28,32 @@ describe('MasterZTemplate', function () {
 
     // deploy address book
     const addressBookFactory = await ethers.getContractFactory('AddressBook')
-    const addressBook = (await addressBookFactory.deploy()) as AddressBook
-    await addressBook.deployed()
+    const addressBookContract = (await addressBookFactory.deploy()) as AddressBook
+    await addressBookContract.deployed()
+
+    // deploy address book library
+    const addressBookLibraryFactory = await ethers.getContractFactory('AddressBookLibrary')
+    const addressBookLibraryContract = await addressBookLibraryFactory.deploy()
+    await addressBookLibraryContract.deployed()
 
     // deploy manager
     const managerFactory = await ethers.getContractFactory('Manager')
-    managerContract = (await managerFactory.deploy(addressBook.address)) as Manager
+    managerContract = (await managerFactory.deploy(addressBookContract.address)) as Manager
     await managerContract.deployed()
-
-    // deploy library
-    const projectLibraryFactory = await ethers.getContractFactory('ProjectLibrary')
-    const projectLibraryContract = (await projectLibraryFactory.deploy()) as ProjectLibrary
-    await projectLibraryContract.deployed()
 
     // deploy MasterZTemplate
     const masterzTemplateFactory = await ethers.getContractFactory('MasterZTemplate', {
       libraries: {
-        ProjectLibrary: projectLibraryContract.address,
+        AddressBookLibrary: addressBookLibraryContract.address,
       },
     })
     masterzTemplateContract = (await masterzTemplateFactory.deploy()) as MasterZTemplate
+    await (
+      await addressBookContract.grantRole(
+        await addressBookContract.MANAGER_DONOR_ROLE(),
+        masterzTemplateContract.address,
+      )
+    ).wait()
 
     // transfer ownership of template to manager
     await (await masterzTemplateContract.transferOwnership(managerContract.address)).wait()

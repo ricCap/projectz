@@ -8,7 +8,7 @@ export type DeployedAddresses = {
   Manager: string
   ExampleProjectTemplate: string
   MasterZTemplate: string
-  ProjectLibrary: string
+  AddressBookLibrary: string
 }
 
 async function main() {
@@ -25,21 +25,30 @@ async function main() {
   const exampleProjectTemplateFactory = await ethers.getContractFactory('ExampleProjectTemplate')
   const exampleProjectTemplateContract = await exampleProjectTemplateFactory.deploy()
   await exampleProjectTemplateContract.transferOwnership(managerContract.address)
+  await (
+    await addressBookContract.grantRole(
+      await addressBookContract.MANAGER_DONOR_ROLE(),
+      exampleProjectTemplateContract.address,
+    )
+  ).wait()
   await managerContract.addProjectTemplate(exampleProjectTemplateContract.address)
   console.log(`Example template deployed to ${exampleProjectTemplateContract.address} and added to manager`)
 
-  const projectLibraryFactory = await ethers.getContractFactory('ProjectLibrary')
-  const projectLibraryContract = await projectLibraryFactory.deploy()
-  await projectLibraryContract.deployed()
-  console.log(`ProjectLibrary deployed to ${projectLibraryContract.address}`)
+  const addressBookLibraryFactory = await ethers.getContractFactory('AddressBookLibrary')
+  const addressBookLibraryContract = await addressBookLibraryFactory.deploy()
+  await addressBookLibraryContract.deployed()
+  console.log(`AddressBookLibrary deployed to ${addressBookLibraryContract.address}`)
 
   const masterzTemplateFactory = await ethers.getContractFactory('MasterZTemplate', {
     libraries: {
-      ProjectLibrary: projectLibraryContract.address,
+      AddressBookLibrary: addressBookLibraryContract.address,
     },
   })
   const masterzTemplateContract = await masterzTemplateFactory.deploy()
   await masterzTemplateContract.transferOwnership(managerContract.address)
+  await (
+    await addressBookContract.grantRole(await addressBookContract.MANAGER_DONOR_ROLE(), masterzTemplateContract.address)
+  ).wait()
   await managerContract.addProjectTemplate(masterzTemplateContract.address)
   console.log(`MasterZ template deployed to ${masterzTemplateContract.address} and added to manager`)
 
@@ -49,7 +58,7 @@ async function main() {
     Manager: managerContract.address,
     ExampleProjectTemplate: exampleProjectTemplateContract.address,
     MasterZTemplate: masterzTemplateContract.address,
-    ProjectLibrary: projectLibraryContract.address,
+    AddressBookLibrary: addressBookLibraryContract.address,
   }
 
   fs.writeFileSync('./src/addresses.json', JSON.stringify(addresses, null, 2), 'utf8')

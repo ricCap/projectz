@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-import "../Manager.sol";
+import "../IManager.sol";
+import "../addressBook/IAddressBook.sol";
 import "./DefaultProjectTemplate.sol";
 
 pragma solidity ^0.8.17;
@@ -29,8 +30,8 @@ contract ExampleProjectTemplate is DefaultProjectTemplate, IExampleProjectTempla
     }
 
     function onlyAdmin() private view {
-        Manager _manager = Manager(owner());
-        AddressBook _addressBook = AddressBook(_manager.addressBookAddress());
+        IManager _manager = IManager(owner());
+        IAddressBook _addressBook = IAddressBook(_manager.addressBookAddress());
         require(
             _addressBook.hasRole(_addressBook.DEFAULT_ADMIN_ROLE(), msg.sender),
             "only DEFAULT_ADMIN_ROLE can create templates"
