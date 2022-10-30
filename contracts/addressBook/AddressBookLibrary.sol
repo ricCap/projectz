@@ -6,13 +6,6 @@ import "../IManager.sol";
 import "./IAddressBook.sol";
 
 library AddressBookLibrary {
-    /////// Events ////////
-    // TODO: add custom library
-    event FundingReceived(address contributor, uint256 amount, uint256 currentTotal, uint256 indexProject);
-    event CheckpointPassed(uint256 checkpointID, uint256 indexProject);
-    event PartnerPaid(address partner, uint256 checkpointID, uint256 indexProject);
-    event ProjectWaitingToStart(uint256 indexProject);
-
     function onlyAdmin(address _managerAddress) external view {
         require(isAdmin(_managerAddress), "only DEFAULT_ADMIN_ROLE can create templates");
     }

@@ -2,8 +2,9 @@
 
 pragma solidity ^0.8.17;
 
-import "../IManager.sol";
 import "./DefaultProjectTemplate.sol";
+import "./ProjectsLibrary.sol";
+import "../IManager.sol";
 import "../addressBook/AddressBookLibrary.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
@@ -21,7 +22,8 @@ enum ProjectState {
     WaitingToStart,
     InProgress,
     Finished,
-    Aborted
+    Aborted,
+    Expired
 }
 
 // project
@@ -59,12 +61,6 @@ contract MasterZTemplate is DefaultProjectTemplate {
 
     // TODO: create a real address book contract
     mapping(uint256 => address) internal partnerAddressBook;
-
-    /////// Events ////////
-    event FundingReceived(address contributor, uint256 amount, uint256 currentTotal, uint256 indexProject);
-    event CheckpointPassed(uint256 checkpointID, uint256 indexProject);
-    event PartnerPaid(address partner, uint256 checkpointID, uint256 indexProject);
-    event ProjectWaitingToStart(uint256 indexProject);
 
     /**
      *  Contract constructor.
@@ -107,7 +103,6 @@ contract MasterZTemplate is DefaultProjectTemplate {
 
     /**
      *  Receive funds
-     *  // TODO: refund in case of abortion
      */
     function donate(uint256 _indexProject, uint256 _amount) external payable {
         projectExists(_indexProject);
@@ -119,9 +114,9 @@ contract MasterZTemplate is DefaultProjectTemplate {
         // save contribution
         contributions[_indexProject][msg.sender] = contributions[_indexProject][msg.sender].add(_amount);
         funds[_indexProject] = funds[_indexProject].add(_amount);
-        emit FundingReceived(msg.sender, _amount, IERC20(cUSDContract).balanceOf(address(this)), _indexProject);
+        emit ProjectsLibrary.FundingReceived(msg.sender, _amount, funds[_indexProject], _indexProject);
 
-        // check hardcap
+        // check hardcap and expiration data
         _checkIfHardCapReached(_indexProject);
         if (projects[_indexProject].projectState == ProjectState.Fundraising) {
             _checkIfFundingExpired(_indexProject);
@@ -137,12 +132,11 @@ contract MasterZTemplate is DefaultProjectTemplate {
 
     /**
      *  Check if HardCap has been reached
-     *  TODO: check balance payment splitter
      */
     function _checkIfHardCapReached(uint256 _indexProject) private {
         if (funds[_indexProject] == hardCap) {
             projects[_indexProject].projectState = ProjectState.WaitingToStart;
-            emit ProjectWaitingToStart(_indexProject);
+            emit ProjectsLibrary.ProjectWaitingToStart(_indexProject);
         }
     }
 
@@ -151,7 +145,8 @@ contract MasterZTemplate is DefaultProjectTemplate {
      */
     function _checkIfFundingExpired(uint256 _indexProject) private {
         if (block.timestamp > projects[_indexProject].deadline) {
-            abortProject(_indexProject);
+            projects[_indexProject].projectState = ProjectState.Expired;
+            emit ProjectsLibrary.ProjectExpired(_indexProject);
         }
     }
 
@@ -215,7 +210,7 @@ contract MasterZTemplate is DefaultProjectTemplate {
             IERC20(cUSDContract).transfer(_partnerAddress, projects[_indexProject].checkpoints[_activeCheckpoint].cost),
             "Payment has failed."
         );
-        emit PartnerPaid(_partnerAddress, _activeCheckpoint, _indexProject);
+        emit ProjectsLibrary.PartnerPaid(_partnerAddress, _activeCheckpoint, _indexProject);
     }
 
     /**
@@ -238,15 +233,38 @@ contract MasterZTemplate is DefaultProjectTemplate {
         }
     }
 
-    function projectExists(uint256 _indexProject) internal view {
-        require(_indexProject < _tokenIdCounter.current(), "project does not exist");
+    function refund(uint256 _indexProject) public {
+        projectExists(_indexProject);
+        require(
+            projects[_indexProject].projectState == ProjectState.Expired ||
+                projects[_indexProject].projectState == ProjectState.Aborted,
+            "Project State not correct"
+        );
+        require(contributions[_indexProject][msg.sender] != 0, "Caller can not be refunded");
+
+        // compute spent funds
+        uint256 spentFunds = 0;
+        for (uint256 i = 0; i < projects[_indexProject].activeCheckpoint; i++) {
+            spentFunds = spentFunds.add(projects[_indexProject].checkpoints[i].cost);
+        }
+
+        // compute refund amount
+        uint256 refundAmount = contributions[_indexProject][msg.sender].mul(funds[_indexProject] - spentFunds).div(
+            funds[_indexProject]
+        );
+        require(IERC20(cUSDContract).transferFrom(address(this), msg.sender, refundAmount), "Payment has failed.");
     }
 
     function abortProject(uint256 _indexProject) public {
-        // TODO: return funds
+        onlyAdmin();
+        projectExists(_indexProject);
+        require(projects[_indexProject].projectState != ProjectState.Expired, "Not callable while expired");
+        require(projects[_indexProject].projectState != ProjectState.Aborted, "Not callable if already aborted");
         projects[_indexProject].projectState = ProjectState.Aborted;
+    }
 
-        // mapping(uint256 => mapping(address => uint256)) internal contributions;
+    function projectExists(uint256 _indexProject) internal view {
+        require(_indexProject < _tokenIdCounter.current(), "Project does not exist");
     }
 
     function onlyAdmin() private view {
