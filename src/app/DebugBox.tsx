@@ -1,14 +1,16 @@
+import { debug } from 'console'
 import { Accessor, Setter } from 'solid-js'
 interface IDebugBoxProps {
   connected: Accessor<boolean>
   setConnected: Setter<boolean>
   message: Accessor<string>
   setMessage: Setter<string>
+  debugOn: Accessor<boolean>
 }
 
 export default function DebugBox(props: IDebugBoxProps) {
   return (
-    <div class="bg-indigo-900 text-center py-4 lg:px-4">
+    <div class="bg-indigo-900 text-center py-4 lg:px-4" hidden={!props.debugOn()}>
       <div
         class="p-2 bg-indigo-800 items-center text-indigo-100 leading-none lg:rounded-full flex lg:inline-flex"
         role="alert"

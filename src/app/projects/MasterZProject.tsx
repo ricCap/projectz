@@ -120,7 +120,7 @@ export const ProjectDetails: Component<
     console.log(cUSDtoken.address)
     console.log(await cUSDtoken.balanceOf(kit.defaultAccount!))
     const receipt = await cUSDtoken
-      .approve(props.selectedTemplate()!, '10000000000000000')
+      .approve(props.selectedTemplate()!, '100000000000000000')
       .sendAndWaitForReceipt({ from: kit.defaultAccount, gas: 1000000 })
     console.log(await cUSDtoken.balanceOf(kit.defaultAccount!))
     console.log(receipt.transactionHash)

@@ -13,6 +13,7 @@ import exampleProjectABI from '../../artifacts/contracts/projects/ExampleProject
 
 import { Manager } from '../types/contracts/Manager'
 import { ExampleProjectTemplate } from '../types/contracts/projects/ExampleProjectTemplate.sol'
+import { ConnectionProps } from './App'
 
 // TODO move these to a struct or context
 export let kit: contractkit.ContractKit
@@ -26,16 +27,7 @@ declare global {
   }
 }
 
-interface INavbarProps {
-  connected: Accessor<boolean>
-  setConnected: Setter<boolean>
-  locale: Accessor<Polyglot>
-  setLocale: Setter<Polyglot>
-  message: Accessor<string>
-  setMessage: Setter<string>
-}
-
-const Balance = (props: INavbarProps) => {
+const Balance = (props: ConnectionProps) => {
   const [balance, { refetch }] = createResource(props.connected, getBalance)
   return (
     <div class="bg-blue-800 hover:bg-blue-900 text-white font-bold py-2 px-4 content-end " onClick={() => refetch()}>
@@ -56,7 +48,7 @@ const Balance = (props: INavbarProps) => {
   }
 }
 
-const WalletsDropdown = (props: INavbarProps) => {
+const WalletsDropdown = (props: ConnectionProps) => {
   return (
     <div class="group">
       <button type="button" class="bg-blue-800 hover:bg-blue-900 text-white font-bold py-2 px-4 content-end">
@@ -86,10 +78,26 @@ const WalletsDropdown = (props: INavbarProps) => {
   )
 }
 
-export default function Navbar(props: INavbarProps): JSXElement {
+export default function Navbar(props: ConnectionProps): JSXElement {
   return (
     <>
       <div class="container w-full flex flex-row bg-blue-700">
+        <div class="my-1 px-4">
+          <label for="default-toggle" class="inline-flex relative items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={props.debugOn()}
+              id="default-toggle"
+              class="sr-only peer"
+              onInput={e => props.setDebugOn(!props.debugOn())}
+            ></input>
+            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+            <span class="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">
+              {props.locale().t('navbar.toggle-debug')}
+            </span>
+          </label>
+        </div>
+
         <div class="grow"></div>
         <Show
           when={props.connected()}
@@ -136,7 +144,7 @@ export default function Navbar(props: INavbarProps): JSXElement {
 }
 
 /** Connect with Valora (testnet wallet) using Wallet Connect */
-async function connectWalletConnect(props: INavbarProps) {
+async function connectWalletConnect(props: ConnectionProps) {
   if (props.connected()) {
     props.setMessage(`Already connected: ${kit.defaultAccount}`)
     return
@@ -159,7 +167,7 @@ async function connectWalletConnect(props: INavbarProps) {
 }
 
 /** Connect using the celo chrome extension wallet */
-async function connectCeloWallet(props: INavbarProps) {
+async function connectCeloWallet(props: ConnectionProps) {
   if (props.connected()) {
     props.setMessage(`Already connected: ${kit.defaultAccount}`)
     return
@@ -180,7 +188,7 @@ async function connectCeloWallet(props: INavbarProps) {
 }
 
 // TODO templates should be listed from the managerContract
-async function _connect(props: INavbarProps, web3: Web3) {
+async function _connect(props: ConnectionProps, web3: Web3) {
   kit = contractkit.newKitFromWeb3(web3)
 
   const accounts = await kit.web3.eth.getAccounts()
@@ -197,7 +205,7 @@ async function _connect(props: INavbarProps, web3: Web3) {
 
 // TODO clear local cache
 // TODO remove unneccessary method calls
-async function disconnect(props: INavbarProps) {
+async function disconnect(props: ConnectionProps) {
   const provider = kit.web3.eth.currentProvider
   if (provider instanceof WalletConnectProvider) {
     await provider.connector.killSession()
