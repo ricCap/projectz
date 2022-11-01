@@ -21,10 +21,11 @@ describe('MasterZTemplate', function () {
   let managerContract: Manager
   let owner: SignerWithAddress
   let donor: SignerWithAddress
+  let partner: SignerWithAddress
   let masterzTemplateContract: MasterZTemplate
 
   beforeEach(async function () {
-    ;[owner, donor] = await ethers.getSigners()
+    ;[owner, donor, partner] = await ethers.getSigners()
 
     // deploy address book
     const addressBookFactory = await ethers.getContractFactory('AddressBook')
@@ -55,17 +56,20 @@ describe('MasterZTemplate', function () {
       )
     ).wait()
 
+    // Grant ADMIN partner role (required because we hardcode the partner at project creation)
+    await (await addressBookContract.grantRole(await addressBookContract.PARTNER_ROLE(), owner.address)).wait()
+
     // transfer ownership of template to manager
     await (await masterzTemplateContract.transferOwnership(managerContract.address)).wait()
   })
 
-  const partecipantAddress = '0x0000000000000000000000000000000000000000'
+  const participantAddress = '0x0000000000000000000000000000000000000000'
   async function deployProject() {
     const deadlineDays = BigNumber.from(1) // days
     await (
       await masterzTemplateContract
         .connect(owner)
-        ['safeMint(address,uint256)'](partecipantAddress, deadlineDays, { gasLimit: 1000000 })
+        ['safeMint(address,uint256)'](participantAddress, deadlineDays, { gasLimit: 1000000 })
     ).wait()
   }
 
@@ -80,7 +84,7 @@ describe('MasterZTemplate', function () {
       expect(projects[0].projectState).to.equal(0)
       expect(projects[0].title).to.equal('Title')
       expect(projects[0].description).to.equal('Description')
-      expect(projects[0].partecipant).to.equal(partecipantAddress)
+      expect(projects[0].participant).to.equal(participantAddress)
       // TODO expect(projects[0][4]).to.equal(deadlineDays)
       expect(projects[0].checkpoints.length).equal(3)
       expect([...projects[0].checkpoints[0]]).deep.equal([
@@ -105,8 +109,8 @@ describe('MasterZTemplate', function () {
       expect(projects[1].title).to.equal('Title')
       expect(projects[0].description).to.equal('Description')
       expect(projects[1].description).to.equal('Description')
-      expect(projects[0].partecipant).to.equal(partecipantAddress)
-      expect(projects[1].partecipant).to.equal(partecipantAddress)
+      expect(projects[0].participant).to.equal(participantAddress)
+      expect(projects[1].participant).to.equal(participantAddress)
       // TODO expect(projects[0][4]).to.equal(deadlineDays)
       expect(projects[0].checkpoints.length).equal(3)
       expect(projects[1].checkpoints.length).equal(3)

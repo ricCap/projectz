@@ -12,6 +12,8 @@ export type DeployedAddresses = {
 }
 
 async function main() {
+  const [admin] = await ethers.getSigners()
+
   const addressBookFactory = await ethers.getContractFactory('AddressBook')
   const addressBookContract = (await addressBookFactory.deploy()) as AddressBook
   await addressBookContract.deployed()
@@ -49,6 +51,10 @@ async function main() {
   await (
     await addressBookContract.grantRole(await addressBookContract.MANAGER_DONOR_ROLE(), masterzTemplateContract.address)
   ).wait()
+
+  // Grant ADMIN partner role (required because we hardcode the partner at project creation)
+  await (await addressBookContract.grantRole(await addressBookContract.PARTNER_ROLE(), admin.address)).wait()
+
   await managerContract.addProjectTemplate(masterzTemplateContract.address)
   console.log(`MasterZ template deployed to ${masterzTemplateContract.address} and added to manager`)
 

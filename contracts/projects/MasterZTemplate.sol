@@ -37,7 +37,7 @@ struct Project {
     ProjectState projectState;
     string title;
     string description;
-    address partecipant;
+    address participant;
     uint256 deadline;
     Checkpoint[] checkpoints;
     uint256 activeCheckpoint;
@@ -57,9 +57,6 @@ contract MasterZTemplate is DefaultProjectTemplate {
     mapping(uint256 => uint256) public funds;
     mapping(uint256 => mapping(address => uint256)) internal contributions;
 
-    // TODO: create a real address book contract
-    mapping(uint256 => address) internal partnerAddressBook;
-
     /////// modifiers ///////
     // TODO: Create a separate function rather than a modifier -> weights less
     modifier onlyState(ProjectState _state, uint256 _indexProject) {
@@ -78,13 +75,6 @@ contract MasterZTemplate is DefaultProjectTemplate {
      *  Defines all the checkpoints that this contract must contains.
      */
     constructor() DefaultProjectTemplate("MasterZTemplate", "MASTERZ") {
-        // define addresses
-        // TODO: create an address book contract
-        partnerAddressBook[0] = address(0x1111111111111111111111111111111111111111);
-        partnerAddressBook[1] = address(0x2222222222222222222222222222222222222222);
-        partnerAddressBook[2] = address(0x3333333333333333333333333333333333333333);
-
-        // add other variables
         info = "Re-evaluate x";
     }
 
@@ -92,7 +82,7 @@ contract MasterZTemplate is DefaultProjectTemplate {
         revert("Call safeMint([string,string])");
     }
 
-    function safeMint(address _partecipantAddress, uint256 _fundingDurationInDays)
+    function safeMint(address _participantAddress, uint256 _fundingDurationInDays)
         public
         returns (uint256 _indexProject)
     {
@@ -108,7 +98,7 @@ contract MasterZTemplate is DefaultProjectTemplate {
         project.title = "Title";
         project.description = "Description";
         project.deadline = _deadline;
-        project.partecipant = _partecipantAddress;
+        project.participant = _participantAddress;
         project.projectState = ProjectState.Fundraising;
         project.activeCheckpoint = 0;
         project.checkpoints.push(
@@ -224,9 +214,8 @@ contract MasterZTemplate is DefaultProjectTemplate {
 
         // gather partner address and active checkpoint
         uint256 _activeCheckpoint = projects[_indexProject].activeCheckpoint;
-        address payable _partnerAddress = payable(
-            _getAddress(projects[_indexProject].checkpoints[_activeCheckpoint].partnerID)
-        );
+        uint256 _partnerID = projects[_indexProject].checkpoints[_activeCheckpoint].partnerID;
+        address payable _partnerAddress = payable(AddressBookLibrary.getPartnerAddress(owner(), _partnerID));
 
         // check if I am allowed to start a transaction and if the checkpoint is ready
         require(
@@ -287,9 +276,5 @@ contract MasterZTemplate is DefaultProjectTemplate {
     // TODO: Remove and change tests
     function getProjectStatus(uint256 _indexProject) public view returns (ProjectState) {
         return projects[_indexProject].projectState;
-    }
-
-    function _getAddress(uint256 _index) internal view returns (address) {
-        return partnerAddressBook[_index];
     }
 }
