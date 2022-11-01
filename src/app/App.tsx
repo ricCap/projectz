@@ -1,16 +1,11 @@
-import { Component, createSignal, createResource, Accessor, Setter } from 'solid-js'
-import Navbar from './Navbar'
+import Polyglot from 'node-polyglot'
+import { Component, createSignal, createResource, Accessor, Setter, mergeProps } from 'solid-js'
 
+import Navbar from './Navbar'
 import { getI18N } from './i18n/i18n'
-import url from './assets/infinity.svg'
+import InfoPanel from './infoPanel/InfoPanel'
 import DebugBox from './DebugBox'
 import { TemplatesTable } from './projects/ProjectTemplate'
-import Polyglot from 'node-polyglot'
-
-/** Various signals that should be passed down to other components */
-const [message, setMessage] = createSignal('Started')
-const [connected, setConnected] = createSignal(false)
-const [locale, setLocale] = createSignal(getI18N('en'))
 
 export interface ConnectionProps {
   message: Accessor<string>
@@ -19,26 +14,8 @@ export interface ConnectionProps {
   setConnected: Setter<boolean>
   locale: Accessor<Polyglot>
   setLocale: Setter<Polyglot>
-}
-
-const Title = () => {
-  return (
-    <div class="grid grid-1 bg-sky-100 border-b border-blue-100">
-      <div class="flex flex-row justify-center items-center border-b border-blue-200">
-        <div class="">
-          <img src={url} class="box-border h-32 w-32 ml-5" />
-        </div>
-        <div class="font-bold text-center text-5xl p-5">{locale().t('welcome')}</div>
-        <div class="">
-          <img src={url} class="box-border h-32 w-32 mr-5" />
-        </div>
-      </div>
-
-      <div class="p-5 text-center">
-        <p class="text-l">{locale().t('info')}</p>
-      </div>
-    </div>
-  )
+  debugOn: Accessor<boolean>
+  setDebugOn: Setter<boolean>
 }
 
 const Footer = () => {
@@ -47,7 +24,7 @@ const Footer = () => {
       <span class="text-sm text-center">
         © 2022{' '}
         <a href="https://google.com/" class="hover:underline">
-          LifeLoop
+          LifeLooop
         </a>
         . All Rights Reserved.
       </span>
@@ -56,34 +33,32 @@ const Footer = () => {
 }
 
 const App: Component = () => {
+  const [message, setMessage] = createSignal('Started')
+  const [connected, setConnected] = createSignal(false)
+  const [locale, setLocale] = createSignal(getI18N('en'))
+  const [debugOn, setDebugOn] = createSignal(false)
+
+  const props: ConnectionProps = {
+    connected: connected,
+    setConnected: setConnected,
+    locale: locale,
+    setLocale: setLocale,
+    message: message,
+    setMessage: setMessage,
+    debugOn: debugOn,
+    setDebugOn: setDebugOn,
+  }
+
   return (
     <div class="flex bg-black min-h-screen">
       <div class="container mx-auto bg-white">
         <div class="flex flex-col min-h-screen">
-          <Navbar
-            connected={connected}
-            setConnected={setConnected}
-            locale={locale}
-            setLocale={setLocale}
-            message={message}
-            setMessage={setMessage}
-          />
+          <Navbar {...mergeProps(props)} />
           <main class="mb-auto">
-            <Title></Title>
-            <DebugBox
-              connected={connected}
-              setConnected={setConnected}
-              message={message}
-              setMessage={setMessage}
-            ></DebugBox>
-            <TemplatesTable
-              message={message}
-              setMessage={setMessage}
-              connected={connected}
-              setConnected={setConnected}
-              locale={locale}
-              setLocale={setLocale}
-            ></TemplatesTable>
+            <InfoPanel {...mergeProps(props)}></InfoPanel>
+            <DebugBox {...mergeProps(props)}></DebugBox>
+            <a id="project-templates" />
+            <TemplatesTable {...mergeProps(props)}></TemplatesTable>
           </main>
           <Footer></Footer>
         </div>

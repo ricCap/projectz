@@ -39,7 +39,7 @@ struct Project {
     ProjectState projectState;
     string title;
     string description;
-    address partecipant;
+    address participant;
     uint256 deadline;
     Checkpoint[] checkpoints;
     uint256 activeCheckpoint;
@@ -59,46 +59,30 @@ contract MasterZTemplate is DefaultProjectTemplate {
     mapping(uint256 => uint256) public funds;
     mapping(uint256 => mapping(address => uint256)) internal contributions;
 
-    // TODO: create a real address book contract
-    mapping(uint256 => address) internal partnerAddressBook;
-
     /**
      *  Contract constructor.
      *  Defines all the checkpoints that this contract must contains.
      */
     constructor(string memory _info, uint256 _hardCap) DefaultProjectTemplate("MasterZTemplate", "MASTERZ") {
-        // define addresses
-        // TODO: create an address book contract
-        partnerAddressBook[0] = address(0x1111111111111111111111111111111111111111);
-        partnerAddressBook[1] = address(0x2222222222222222222222222222222222222222);
-        partnerAddressBook[2] = address(0x3333333333333333333333333333333333333333);
-
-        // add other variables
         info = _info;
         hardCap = _hardCap;
     }
 
+    /**
+     * Overwritten safeMint
+     */
     function safeMint() public pure override returns (uint256) {
-        revert("Call safeMint([string,string])");
+        revert("Call safeMint([Project])");
     }
 
+    /**
+     * New safeMint
+     */
     function safeMint(Project calldata _project) public returns (uint256 _indexProject) {
         onlyAdmin();
         _indexProject = super.safeMint();
-
-        // define new project
         projects[_indexProject] = _project;
-
         return _indexProject;
-    }
-
-    function listProjects() public view returns (Project[] memory) {
-        uint256 tokensCount = totalSupply();
-        Project[] memory result = new Project[](tokensCount);
-        for (uint256 i = 0; i < tokensCount; i++) {
-            result[i] = projects[i];
-        }
-        return result;
     }
 
     /**
@@ -189,9 +173,8 @@ contract MasterZTemplate is DefaultProjectTemplate {
 
         // gather partner address and active checkpoint
         uint256 _activeCheckpoint = projects[_indexProject].activeCheckpoint;
-        address payable _partnerAddress = payable(
-            _getAddress(projects[_indexProject].checkpoints[_activeCheckpoint].partnerID)
-        );
+        uint256 _partnerID = projects[_indexProject].checkpoints[_activeCheckpoint].partnerID;
+        address payable _partnerAddress = payable(AddressBookLibrary.getPartnerAddress(owner(), _partnerID));
 
         // check if I am allowed to start a transaction and if the checkpoint is ready
         require(
@@ -233,6 +216,9 @@ contract MasterZTemplate is DefaultProjectTemplate {
         }
     }
 
+    /**
+     * Trigger a refund
+     */
     function refund(uint256 _indexProject) public {
         projectExists(_indexProject);
         require(
@@ -255,6 +241,9 @@ contract MasterZTemplate is DefaultProjectTemplate {
         require(IERC20(cUSDContract).transferFrom(address(this), msg.sender, refundAmount), "Payment has failed.");
     }
 
+    /**
+     * Abort specified project
+     */
     function abortProject(uint256 _indexProject) public {
         onlyAdmin();
         projectExists(_indexProject);
@@ -263,19 +252,36 @@ contract MasterZTemplate is DefaultProjectTemplate {
         projects[_indexProject].projectState = ProjectState.Aborted;
     }
 
+    /**
+     * Return all projects
+     */
+    function listProjects() public view returns (Project[] memory) {
+        uint256 tokensCount = totalSupply();
+        Project[] memory result = new Project[](tokensCount);
+        for (uint256 i = 0; i < tokensCount; i++) {
+            result[i] = projects[i];
+        }
+        return result;
+    }
+
+    /**
+     * Check if project exists
+     */
     function projectExists(uint256 _indexProject) internal view {
         require(_indexProject < _tokenIdCounter.current(), "Project does not exist");
     }
 
+    /**
+     * Check if caller is admin
+     */
     function onlyAdmin() private view {
         AddressBookLibrary.onlyAdmin(owner());
     }
 
+    /**
+     * Check if state agrees
+     */
     function onlyState(ProjectState _state, uint256 _indexProject) private view {
         require(projects[_indexProject].projectState == _state, "PS not correct");
-    }
-
-    function _getAddress(uint256 _index) internal view returns (address) {
-        return partnerAddressBook[_index];
     }
 }
