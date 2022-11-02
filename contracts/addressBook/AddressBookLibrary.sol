@@ -17,7 +17,7 @@ library AddressBookLibrary {
         return _addressBook.hasRole(_addressBook.DEFAULT_ADMIN_ROLE(), msg.sender);
     }
 
-    function isPartner(address _managerAddress) public view returns (bool) {
+    function isPartner(address _managerAddress) external view returns (bool) {
         IManager _manager = IManager(_managerAddress);
         IAddressBook _addressBook = IAddressBook(_manager.addressBookAddress());
         return _addressBook.hasRole(_addressBook.PARTNER_ROLE(), msg.sender);
@@ -51,7 +51,7 @@ library AddressBookLibrary {
         return _partnerAddress;
     }
 
-    function userExists(address _managerAddress, address _userAddress) public view returns (bool) {
+    function userExists(address _managerAddress, address _userAddress) external view returns (bool) {
         IManager _manager = IManager(_managerAddress);
         IAddressBook _addressBook = IAddressBook(_manager.addressBookAddress());
         return _addressBook.userExists(_userAddress);

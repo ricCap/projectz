@@ -6,7 +6,6 @@ import "./DefaultProjectTemplate.sol";
 import "./ProjectsLibrary.sol";
 import "../IManager.sol";
 import "../addressBook/AddressBookLibrary.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
@@ -51,7 +50,6 @@ contract MasterZTemplate is DefaultProjectTemplate {
     using Counters for Counters.Counter;
 
     /////// variables ///////
-    address internal cUSDContract = 0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1;
     string public info;
     uint256 public hardCap;
 
@@ -110,8 +108,7 @@ contract MasterZTemplate is DefaultProjectTemplate {
             AddressBookLibrary.addDonor(owner(), msg.sender);
         }
 
-        // to the bottom for reentracy problems
-        require(IERC20(cUSDContract).transferFrom(msg.sender, address(this), _amount), "Donation Failed");
+        ProjectsLibrary.donate(msg.sender, address(this), _amount);
     }
 
     /**
@@ -137,7 +134,7 @@ contract MasterZTemplate is DefaultProjectTemplate {
     /**
      *  Start project once fundraising has finished
      */
-    function startProject(uint256 _indexProject) public {
+    function startProject(uint256 _indexProject) external {
         onlyAdmin();
         projectExists(_indexProject);
         onlyState(ProjectState.WaitingToStart, _indexProject);
@@ -167,7 +164,7 @@ contract MasterZTemplate is DefaultProjectTemplate {
     /**
      *  Start specified checkpoint with pull payment request
      */
-    function startCheckPoint(uint256 _indexProject) public {
+    function startCheckPoint(uint256 _indexProject) external {
         projectExists(_indexProject);
         onlyState(ProjectState.InProgress, _indexProject);
 
@@ -189,17 +186,14 @@ contract MasterZTemplate is DefaultProjectTemplate {
 
         // start checkpoint
         projects[_indexProject].checkpoints[_activeCheckpoint].state = CheckpointState.InProgress;
-        require(
-            IERC20(cUSDContract).transfer(_partnerAddress, projects[_indexProject].checkpoints[_activeCheckpoint].cost),
-            "Payment has failed."
-        );
+        ProjectsLibrary.payPartner(_partnerAddress, projects[_indexProject].checkpoints[_activeCheckpoint].cost);
         emit ProjectsLibrary.PartnerPaid(_partnerAddress, _activeCheckpoint, _indexProject);
     }
 
     /**
      *  Set a checkpoint as finished and start the next one.
      */
-    function finishCheckpoint(uint256 _indexProject) public {
+    function finishCheckpoint(uint256 _indexProject) external {
         onlyAdmin();
         projectExists(_indexProject);
         onlyState(ProjectState.InProgress, _indexProject);
@@ -238,7 +232,7 @@ contract MasterZTemplate is DefaultProjectTemplate {
         uint256 refundAmount = contributions[_indexProject][msg.sender].mul(funds[_indexProject] - spentFunds).div(
             funds[_indexProject]
         );
-        require(IERC20(cUSDContract).transferFrom(address(this), msg.sender, refundAmount), "Payment has failed.");
+        ProjectsLibrary.refund(address(this), msg.sender, refundAmount);
     }
 
     /**

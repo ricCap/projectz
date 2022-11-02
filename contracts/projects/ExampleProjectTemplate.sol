@@ -15,8 +15,6 @@ interface IExampleProjectTemplate {
     function safeMint(Project calldata project) external returns (uint256 _tokenId);
 
     function listProjects() external view returns (Project[] memory);
-
-    function iId() external pure returns (bytes4);
 }
 
 /** @dev Example project template */
@@ -51,16 +49,5 @@ contract ExampleProjectTemplate is DefaultProjectTemplate, IExampleProjectTempla
             result[i] = idToProject[i];
         }
         return result;
-    }
-
-    /**
-     * @dev See {IERC165-supportsInterface}.
-     */
-    function supportsInterface(bytes4 interfaceId) public view virtual override(DefaultProjectTemplate) returns (bool) {
-        return interfaceId == type(IExampleProjectTemplate).interfaceId || super.supportsInterface(interfaceId);
-    }
-
-    function iId() external pure override returns (bytes4) {
-        return type(IExampleProjectTemplate).interfaceId;
     }
 }
