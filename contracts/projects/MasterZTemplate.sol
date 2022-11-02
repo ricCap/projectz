@@ -69,9 +69,7 @@ contract MasterZTemplate is DefaultProjectTemplate {
     /**
      * Overwritten safeMint
      */
-    function safeMint() public pure override returns (uint256) {
-        revert("Call safeMint([Project])");
-    }
+    function safeMint() public pure override returns (uint256) {}
 
     /**
      * New safeMint
@@ -91,7 +89,7 @@ contract MasterZTemplate is DefaultProjectTemplate {
         onlyState(ProjectState.Fundraising, _indexProject);
 
         // check contribution
-        require(funds[_indexProject].add(_amount) <= hardCap, "Donation exceeds hardCap");
+        require(funds[_indexProject].add(_amount) <= hardCap, "HC exceeded");
 
         // save contribution
         contributions[_indexProject][msg.sender] = contributions[_indexProject][msg.sender].add(_amount);
@@ -156,7 +154,7 @@ contract MasterZTemplate is DefaultProjectTemplate {
         onlyState(ProjectState.InProgress, _indexProject);
         require(
             projects[_indexProject].checkpoints[_indexCheckpoint].state == CheckpointState.WaitingInitialization,
-            "Checkpoint not in the correct state"
+            "Wrong CS"
         );
         projects[_indexProject].checkpoints[_indexCheckpoint].state = CheckpointState.WaitingToStart;
     }
@@ -177,11 +175,11 @@ contract MasterZTemplate is DefaultProjectTemplate {
         require(
             AddressBookLibrary.isAdmin(owner()) ||
                 (AddressBookLibrary.isPartner(owner()) && msg.sender == _partnerAddress),
-            "Sender is not due any payment."
+            "Sender not payable"
         );
         require(
             projects[_indexProject].checkpoints[_activeCheckpoint].state == CheckpointState.WaitingToStart,
-            "Checkpoint not ready to start"
+            "Wrong CS"
         );
 
         // start checkpoint
@@ -218,9 +216,9 @@ contract MasterZTemplate is DefaultProjectTemplate {
         require(
             projects[_indexProject].projectState == ProjectState.Expired ||
                 projects[_indexProject].projectState == ProjectState.Aborted,
-            "Project State not correct"
+            "Wrong PS"
         );
-        require(contributions[_indexProject][msg.sender] != 0, "Caller can not be refunded");
+        require(contributions[_indexProject][msg.sender] != 0, "Not refundable");
 
         // compute spent funds
         uint256 spentFunds = 0;
@@ -241,8 +239,11 @@ contract MasterZTemplate is DefaultProjectTemplate {
     function abortProject(uint256 _indexProject) public {
         onlyAdmin();
         projectExists(_indexProject);
-        require(projects[_indexProject].projectState != ProjectState.Expired, "Not callable while expired");
-        require(projects[_indexProject].projectState != ProjectState.Aborted, "Not callable if already aborted");
+        require(
+            projects[_indexProject].projectState != ProjectState.Expired &&
+                projects[_indexProject].projectState != ProjectState.Aborted,
+            "Wrong PS"
+        );
         projects[_indexProject].projectState = ProjectState.Aborted;
     }
 
@@ -262,7 +263,7 @@ contract MasterZTemplate is DefaultProjectTemplate {
      * Check if project exists
      */
     function projectExists(uint256 _indexProject) internal view {
-        require(_indexProject < _tokenIdCounter.current(), "Project does not exist");
+        require(_indexProject < _tokenIdCounter.current(), "P not existing");
     }
 
     /**
@@ -276,6 +277,6 @@ contract MasterZTemplate is DefaultProjectTemplate {
      * Check if state agrees
      */
     function onlyState(ProjectState _state, uint256 _indexProject) private view {
-        require(projects[_indexProject].projectState == _state, "PS not correct");
+        require(projects[_indexProject].projectState == _state, "Wrong PS");
     }
 }
