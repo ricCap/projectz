@@ -33,8 +33,10 @@ library AddressBookLibrary {
     function addDonor(address _managerAddress, address _userAddress) external {
         IManager _manager = IManager(_managerAddress);
         IAddressBook _addressBook = IAddressBook(_manager.addressBookAddress());
-        _addressBook.addUser(_userAddress);
-        _addressBook.grantRole(_addressBook.DONOR_ROLE(), _userAddress);
+        if (!_addressBook.userExists(_userAddress)) {
+            _addressBook.addUser(_userAddress);
+            _addressBook.grantRole(_addressBook.DONOR_ROLE(), _userAddress);
+        }
     }
 
     function addPartner(address _managerAddress, address _userAddress) external {

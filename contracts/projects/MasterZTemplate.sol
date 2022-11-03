@@ -38,7 +38,7 @@ struct Project {
     ProjectState projectState;
     string title;
     string description;
-    address participant;
+    address partecipant;
     uint256 deadline;
     Checkpoint[] checkpoints;
     uint256 activeCheckpoint;
@@ -85,7 +85,6 @@ contract MasterZTemplate is DefaultProjectTemplate {
      *  Receive funds
      */
     function donate(uint256 _indexProject, uint256 _amount) external payable {
-        projectExists(_indexProject);
         onlyState(ProjectState.Fundraising, _indexProject);
 
         // check contribution
@@ -102,9 +101,7 @@ contract MasterZTemplate is DefaultProjectTemplate {
             _checkIfFundingExpired(_indexProject);
         }
 
-        if (!AddressBookLibrary.userExists(owner(), msg.sender)) {
-            AddressBookLibrary.addDonor(owner(), msg.sender);
-        }
+        AddressBookLibrary.addDonor(owner(), msg.sender);
 
         ProjectsLibrary.donate(msg.sender, address(this), _amount);
     }
@@ -134,7 +131,6 @@ contract MasterZTemplate is DefaultProjectTemplate {
      */
     function startProject(uint256 _indexProject) external {
         onlyAdmin();
-        projectExists(_indexProject);
         onlyState(ProjectState.WaitingToStart, _indexProject);
 
         // start project
@@ -150,7 +146,6 @@ contract MasterZTemplate is DefaultProjectTemplate {
      */
     function initializeCheckPoint(uint256 _indexCheckpoint, uint256 _indexProject) internal {
         onlyAdmin();
-        projectExists(_indexProject);
         onlyState(ProjectState.InProgress, _indexProject);
         require(
             projects[_indexProject].checkpoints[_indexCheckpoint].state == CheckpointState.WaitingInitialization,
@@ -163,12 +158,11 @@ contract MasterZTemplate is DefaultProjectTemplate {
      *  Start specified checkpoint with pull payment request
      */
     function startCheckPoint(uint256 _indexProject) external {
-        projectExists(_indexProject);
         onlyState(ProjectState.InProgress, _indexProject);
 
         // gather partner address and active checkpoint
         uint256 _activeCheckpoint = projects[_indexProject].activeCheckpoint;
-        uint256 _partnerID = projects[_indexProject].checkpoints[_activeCheckpoint].partnerID;
+        uint256 _partnerID = getCheckpoint(_indexProject, _activeCheckpoint).partnerID;
         address payable _partnerAddress = payable(AddressBookLibrary.getPartnerAddress(owner(), _partnerID));
 
         // check if I am allowed to start a transaction and if the checkpoint is ready
@@ -177,14 +171,11 @@ contract MasterZTemplate is DefaultProjectTemplate {
                 (AddressBookLibrary.isPartner(owner()) && msg.sender == _partnerAddress),
             "Sender not payable"
         );
-        require(
-            projects[_indexProject].checkpoints[_activeCheckpoint].state == CheckpointState.WaitingToStart,
-            "Wrong CS"
-        );
+        require(getCheckpoint(_indexProject, _activeCheckpoint).state == CheckpointState.WaitingToStart, "Wrong CS");
 
         // start checkpoint
-        projects[_indexProject].checkpoints[_activeCheckpoint].state = CheckpointState.InProgress;
-        ProjectsLibrary.payPartner(_partnerAddress, projects[_indexProject].checkpoints[_activeCheckpoint].cost);
+        getCheckpoint(_indexProject, _activeCheckpoint).state = CheckpointState.InProgress;
+        ProjectsLibrary.payPartner(_partnerAddress, getCheckpoint(_indexProject, _activeCheckpoint).cost);
         emit ProjectsLibrary.PartnerPaid(_partnerAddress, _activeCheckpoint, _indexProject);
     }
 
@@ -193,7 +184,6 @@ contract MasterZTemplate is DefaultProjectTemplate {
      */
     function finishCheckpoint(uint256 _indexProject) external {
         onlyAdmin();
-        projectExists(_indexProject);
         onlyState(ProjectState.InProgress, _indexProject);
 
         // approve current checkpoint
@@ -277,6 +267,11 @@ contract MasterZTemplate is DefaultProjectTemplate {
      * Check if state agrees
      */
     function onlyState(ProjectState _state, uint256 _indexProject) private view {
+        projectExists(_indexProject);
         require(projects[_indexProject].projectState == _state, "Wrong PS");
+    }
+
+    function getCheckpoint(uint256 _indexProject, uint256 _indexCheckpoint) private view returns (Checkpoint storage) {
+        return projects[_indexProject].checkpoints[_indexCheckpoint];
     }
 }

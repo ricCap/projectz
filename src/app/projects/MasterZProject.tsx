@@ -65,7 +65,7 @@ export const MasterZProjectTable: Component<ProjectsProps> = props => {
           projectState: value[0],
           title: value[1],
           description: value[2],
-          participant: value[3],
+          partecipant: value[3],
           deadline: value[4],
           checkpoints: checkpoints,
           activeCheckpoint: value[6],
@@ -95,7 +95,7 @@ export const Project: Component<{
       >
         <p class="text-center font-bold text-xl">{props.project.title}</p>
         <p>{props.project.description}</p>
-        <p>{props.project.participant}</p>
+        <p>{props.project.partecipant}</p>
         <img src="http://t1.gstatic.com/licensed-image?q=tbn:ANd9GcSxLr0EfOo_znMX-DYtQVeYFvNzAF4Xw3Ny8nm9RZqlS0QdgFMCBN81LtQxXfqj_1EviZSW9_zWBuBi6wLLtjA"></img>
       </div>
     </a>
@@ -165,7 +165,7 @@ export const ProjectDetails: Component<
           ></img>
         </div>
         <div class="text-bold text-2xl m-2 p-2">
-          <span class="inline-block align-middle">Project for {props.selectedProject()!.participant}</span>
+          <span class="inline-block align-middle">Project for {props.selectedProject()!.partecipant}</span>
         </div>
         <div>
           <button
@@ -196,7 +196,7 @@ export const ProjectDetails: Component<
       <div>Active checkpoint: {props.selectedProject()?.activeCheckpoint}</div>
       <div>State: {props.selectedProject()?.projectState}</div>
       <div>Deadline: {props.selectedProject()?.deadline}</div>
-      <div>Participant: {props.selectedProject()?.participant}</div>
+      <div>Participant: {props.selectedProject()?.partecipant}</div>
 
       <div class="w-1/2 p-2">
         <div class="flex justify-between mb-1">
