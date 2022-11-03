@@ -10,7 +10,7 @@ import { AddressBook } from '../typechain-types/AddressBook'
 import { Manager } from '../typechain-types/Manager'
 import { MasterZTemplate } from '../typechain-types/projects/MasterZTemplate'
 import { AddressBookLibrary } from '../typechain-types/addressBook/AddressBookLibrary'
-import { ProjectLibrary } from '../typechain-types/projects/ProjectsLibrary.sol/ProjectLibrary'
+import { ProjectsLibrary } from '../typechain-types/projects/ProjectsLibrary.sol/ProjectsLibrary'
 
 /** Conditional tests */
 const itIf = (condition: boolean) => (condition ? it : it.skip)
@@ -23,12 +23,12 @@ describe('MasterZTemplate', function () {
   let partner: SignerWithAddress
   let masterzTemplateContract: MasterZTemplate
 
-  const partecipantAddress = '0x0000000000000000000000000000000000000000'
+  const participantAddress = '0x0000000000000000000000000000000000000000'
   const projectExample = {
     projectState: 0,
     title: 'Title',
     description: 'Description',
-    partecipant: partecipantAddress,
+    participant: participantAddress,
     deadline: 1, // number of days
     checkpoints: [
       {
@@ -133,7 +133,7 @@ describe('MasterZTemplate', function () {
       expect(projects[0].projectState).to.equal(0)
       expect(projects[0].title).to.equal('Title')
       expect(projects[0].description).to.equal('Description')
-      expect(projects[0].partecipant).to.equal(partecipantAddress)
+      expect(projects[0].participant).to.equal(participantAddress)
       // TODO expect(projects[0][4]).to.equal(deadlineDays)
       expect(projects[0].checkpoints.length).equal(3)
       expect([...projects[0].checkpoints[0]]).deep.equal([
@@ -158,8 +158,8 @@ describe('MasterZTemplate', function () {
       expect(projects[1].title).to.equal('Title')
       expect(projects[0].description).to.equal('Description')
       expect(projects[1].description).to.equal('Description')
-      expect(projects[0].partecipant).to.equal(partecipantAddress)
-      expect(projects[1].partecipant).to.equal(partecipantAddress)
+      expect(projects[0].participant).to.equal(participantAddress)
+      expect(projects[1].participant).to.equal(participantAddress)
       // TODO expect(projects[0][4]).to.equal(deadlineDays)
       expect(projects[0].checkpoints.length).equal(3)
       expect(projects[1].checkpoints.length).equal(3)

@@ -38,7 +38,7 @@ struct Project {
     ProjectState projectState;
     string title;
     string description;
-    address partecipant;
+    address participant;
     uint256 deadline;
     Checkpoint[] checkpoints;
     uint256 activeCheckpoint;
@@ -68,8 +68,9 @@ contract MasterZTemplate is DefaultProjectTemplate {
 
     /**
      * Overwritten safeMint
+     * TODO add revert
      */
-    function safeMint() public pure override returns (uint256) {}
+    function safeMint() public pure override returns (uint256) {} // solhint-disable-line no-empty-blocks
 
     /**
      * New safeMint

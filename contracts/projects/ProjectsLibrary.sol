@@ -13,7 +13,7 @@ library ProjectsLibrary {
     event ProjectExpired(uint256 indexProject);
     event ProjectMinted(string name_, string symbol_, uint256 _projectIndex);
 
-    address constant cUSDContract = 0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1;
+    address private constant CUSD_CONTRACT_ADDRESS = 0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1;
 
     function donate(
         address from,
@@ -21,11 +21,11 @@ library ProjectsLibrary {
         uint256 _amount
     ) external {
         // to the bottom for reentracy problems
-        require(IERC20(cUSDContract).transferFrom(from, to, _amount), "Donation Failed");
+        require(IERC20(CUSD_CONTRACT_ADDRESS).transferFrom(from, to, _amount), "Donation Failed");
     }
 
     function payPartner(address _partnerAddress, uint256 _amount) external {
-        require(IERC20(cUSDContract).transfer(_partnerAddress, _amount), "Payment has failed.");
+        require(IERC20(CUSD_CONTRACT_ADDRESS).transfer(_partnerAddress, _amount), "Payment has failed.");
     }
 
     function refund(
@@ -33,6 +33,6 @@ library ProjectsLibrary {
         address to,
         uint256 amount
     ) external {
-        require(IERC20(cUSDContract).transferFrom(from, to, amount), "Payment has failed.");
+        require(IERC20(CUSD_CONTRACT_ADDRESS).transferFrom(from, to, amount), "Payment has failed.");
     }
 }

@@ -11,9 +11,9 @@ const englishPhrases = {
       description:
         "A secure and transparent online donation system powered by the Celo blockchain technology that allows you to track donations from start to finish. You'll know exactly who you're helping.",
       details:
-        "Our way of ensuring that the donation actually reaches those you are helping is through our projects. (I beneficiari vengono individuati tramite un processo di selezione -> questo lo inseriremo all'interno di riquadri che vanno più nel dettaglio del processo che quindi un donatore può andare a vederselo). The undertaking is crowdfunded. The project is what connects the giver and partecipant together. Select the cause that is most important to you, and then you can donate right from the project's page.",
+        "Our way of ensuring that the donation actually reaches those you are helping is through our projects. (I beneficiari vengono individuati tramite un processo di selezione -> questo lo inseriremo all'interno di riquadri che vanno più nel dettaglio del processo che quindi un donatore può andare a vederselo). The undertaking is crowdfunded. The project is what connects the giver and participant together. Select the cause that is most important to you, and then you can donate right from the project's page.",
     },
-    partecipant: {
+    participant: {
       selector: 'Participant',
       description: 'Participant description',
       details: 'Participant details',
