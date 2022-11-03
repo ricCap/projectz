@@ -9,8 +9,6 @@ import hre from 'hardhat'
 import { AddressBook } from '../typechain-types/AddressBook'
 import { Manager } from '../typechain-types/Manager'
 import { MasterZTemplate } from '../typechain-types/projects/MasterZTemplate'
-import { AddressBookLibrary } from '../typechain-types/addressBook/AddressBookLibrary'
-import { ProjectsLibrary } from '../typechain-types/projects/ProjectsLibrary.sol/ProjectsLibrary'
 
 /** Conditional tests */
 const itIf = (condition: boolean) => (condition ? it : it.skip)
@@ -28,8 +26,8 @@ describe('MasterZTemplate', function () {
     projectState: 0,
     title: 'Title',
     description: 'Description',
-    participant: participantAddress,
-    deadline: 1, // number of days
+    partecipant: participantAddress,
+    deadline: 1_000_000_000_000_000, // number of days
     checkpoints: [
       {
         state: 0,
@@ -43,14 +41,14 @@ describe('MasterZTemplate', function () {
         title: 'Checkpoint title',
         description: 'Pass team project.',
         cost: 2,
-        partnerID: 1,
+        partnerID: 0,
       },
       {
         state: 0,
         title: 'Checkpoint title',
         description: 'Pass final exam.',
         cost: 2,
-        partnerID: 2,
+        partnerID: 0,
       },
     ],
     activeCheckpoint: 0,
@@ -199,7 +197,7 @@ describe('MasterZTemplate', function () {
       await deployProject()
       await approveDonationToContract()
       expect(await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('10'))).to.be.revertedWith(
-        'Donation exceeds hardCap',
+        'HC exceeded',
       )
     })
 
@@ -224,7 +222,7 @@ describe('MasterZTemplate', function () {
       await deployProject()
       await approveDonationToContract()
       await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('5'))).wait()
-      expect(await masterzTemplateContract.connect(owner).startProject(1)).to.be.revertedWith('project does not exist')
+      expect(await masterzTemplateContract.connect(owner).startProject(1)).to.be.revertedWith('P not existing')
     })
 
     itIf(integrationTestsOn)('Should not start project if not admin', async function () {
@@ -293,9 +291,7 @@ describe('MasterZTemplate', function () {
       await approveDonationToContract()
       await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('5'))).wait()
       await (await masterzTemplateContract.connect(owner).startProject(0)).wait()
-      expect(await masterzTemplateContract.connect(owner).startCheckPoint(1)).to.be.revertedWith(
-        'Checkpoint not ready to start',
-      )
+      expect(await masterzTemplateContract.connect(owner).startCheckPoint(1)).to.be.revertedWith('Wrong CS')
     })
 
     // test with non-admin account
@@ -363,9 +359,7 @@ describe('MasterZTemplate', function () {
       await deployProject()
       await approveDonationToContract()
       await masterzTemplateContract.connect(owner).abortProject(0)
-      expect(await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('1'))).to.be.revertedWith(
-        'PS not correct',
-      )
+      expect(await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('1'))).to.be.revertedWith('Wrong PS')
     })
   })
 })
