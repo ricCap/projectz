@@ -26,7 +26,7 @@ describe('MasterZTemplate', function () {
     projectState: 0,
     title: 'Title',
     description: 'Description',
-    partecipant: participantAddress,
+    participant: participantAddress,
     deadline: 1_000_000_000_000_000, // number of days
     checkpoints: [
       {
