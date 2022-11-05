@@ -9,9 +9,6 @@ import hre from 'hardhat'
 import { AddressBook } from '../typechain-types/AddressBook'
 import { Manager } from '../typechain-types/Manager'
 import { MasterZTemplate } from '../typechain-types/projects/MasterZTemplate'
-import { AddressBookLibrary } from '../typechain-types/addressBook/AddressBookLibrary'
-import { ProjectLibrary } from '../typechain-types/projects/ProjectsLibrary.sol/ProjectLibrary'
-import { privateEncrypt } from 'crypto'
 
 /** Conditional tests */
 const itIf = (condition: boolean) => (condition ? it : it.skip)
@@ -23,6 +20,58 @@ describe('MasterZTemplate', function () {
   let donor: SignerWithAddress
   let partner: SignerWithAddress
   let masterzTemplateContract: MasterZTemplate
+
+  const participantAddress = '0x0000000000000000000000000000000000000000'
+  const projectExample = {
+    projectState: 0,
+    title: 'Title',
+    description: 'Description',
+    participant: participantAddress,
+    deadline: 1_000_000_000_000_000, // number of days
+    checkpoints: [
+      {
+        state: 0,
+        title: 'Checkpoint title',
+        description: 'Follow 80% of courses.',
+        cost: 1,
+        partnerID: 0,
+      },
+      {
+        state: 0,
+        title: 'Checkpoint title',
+        description: 'Pass team project.',
+        cost: 2,
+        partnerID: 0,
+      },
+      {
+        state: 0,
+        title: 'Checkpoint title',
+        description: 'Pass final exam.',
+        cost: 2,
+        partnerID: 0,
+      },
+    ],
+    activeCheckpoint: 0,
+  }
+
+  async function deployProject() {
+    await (
+      await masterzTemplateContract
+        .connect(owner)
+        ['safeMint((uint8,string,string,address,uint256,(uint8,string,string,uint256,uint256)[],uint256))'](
+          projectExample,
+          { gasLimit: 1000000 },
+        )
+    ).wait()
+  }
+
+  async function approveDonationToContract(): Promise<void> {
+    const kit = Kit.newKit('http://localhost:8545')
+    const cUSDtoken = await kit.contracts.getStableToken()
+    await cUSDtoken
+      .approve(masterzTemplateContract.address, '10000000000000000000000')
+      .sendAndWaitForReceipt({ from: owner.address, gasPrice: 1_000_000_000 })
+  }
 
   beforeEach(async function () {
     ;[owner, donor, partner] = await ethers.getSigners()
@@ -37,6 +86,11 @@ describe('MasterZTemplate', function () {
     const addressBookLibraryContract = await addressBookLibraryFactory.deploy()
     await addressBookLibraryContract.deployed()
 
+    // deploy projects library
+    const projectsLibraryFactory = await ethers.getContractFactory('ProjectsLibrary')
+    const projectsLibraryContract = await projectsLibraryFactory.deploy()
+    await projectsLibraryContract.deployed()
+
     // deploy manager
     const managerFactory = await ethers.getContractFactory('Manager')
     managerContract = (await managerFactory.deploy(addressBookContract.address)) as Manager
@@ -46,9 +100,10 @@ describe('MasterZTemplate', function () {
     const masterzTemplateFactory = await ethers.getContractFactory('MasterZTemplate', {
       libraries: {
         AddressBookLibrary: addressBookLibraryContract.address,
+        ProjectsLibrary: projectsLibraryContract.address,
       },
     })
-    masterzTemplateContract = (await masterzTemplateFactory.deploy()) as MasterZTemplate
+    masterzTemplateContract = (await masterzTemplateFactory.deploy('info message', 5)) as MasterZTemplate
     await (
       await addressBookContract.grantRole(
         await addressBookContract.MANAGER_DONOR_ROLE(),
@@ -63,23 +118,15 @@ describe('MasterZTemplate', function () {
     await (await masterzTemplateContract.transferOwnership(managerContract.address)).wait()
   })
 
-  const participantAddress = '0x0000000000000000000000000000000000000000'
-  async function deployProject() {
-    const deadlineDays = BigNumber.from(1) // days
-    await (
-      await masterzTemplateContract
-        .connect(owner)
-        ['safeMint(address,uint256)'](participantAddress, deadlineDays, { gasLimit: 1000000 })
-    ).wait()
-  }
-
   describe('project creation', function () {
     // test on multiple projects
     it('Should create project', async function () {
       await deployProject()
 
+      const info = await masterzTemplateContract.connect(owner).info()
       const projects = await masterzTemplateContract.connect(owner).listProjects()
 
+      expect(info).to.equal('info message')
       expect(projects.length).to.equal(1)
       expect(projects[0].projectState).to.equal(0)
       expect(projects[0].title).to.equal('Title')
@@ -131,14 +178,6 @@ describe('MasterZTemplate', function () {
     })
   })
 
-  async function approveDonationToContract(): Promise<void> {
-    const kit = Kit.newKit('http://localhost:8545')
-    const cUSDtoken = await kit.contracts.getStableToken()
-    await cUSDtoken
-      .approve(masterzTemplateContract.address, '10000000000000000000000')
-      .sendAndWaitForReceipt({ from: owner.address, gasPrice: 891536019 })
-  }
-
   describe('funding', function () {
     itIf(integrationTestsOn)('Should fund project', async function () {
       await deployProject()
@@ -150,35 +189,46 @@ describe('MasterZTemplate', function () {
       await deployProject()
       await approveDonationToContract()
       await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('1'))).wait()
-      expect(await masterzTemplateContract.getProjectStatus(0)).equals(0)
+      const projects = await masterzTemplateContract.connect(owner).listProjects()
+      expect(projects[0].projectState).equals(0)
+    })
+
+    itIf(integrationTestsOn)('Should exceed hardcap', async function () {
+      await deployProject()
+      await approveDonationToContract()
+      expect(await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('10'))).to.be.revertedWith(
+        'HC exceeded',
+      )
     })
 
     itIf(integrationTestsOn)('Should reach hardcap with donation greater than hardcap', async function () {
       await deployProject()
       await approveDonationToContract()
-      await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('10'))).wait()
-      expect(await masterzTemplateContract.getProjectStatus(0)).equals(1)
+      await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('5'))).wait()
+      const projects = await masterzTemplateContract.connect(owner).listProjects()
+      expect(projects[0].projectState).equals(1)
     })
 
     itIf(integrationTestsOn)('Should start project', async function () {
       await deployProject()
       await approveDonationToContract()
-      await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('10'))).wait()
+      await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('5'))).wait()
       await (await masterzTemplateContract.connect(owner).startProject(0)).wait()
-      expect(await masterzTemplateContract.getProjectStatus(0)).equals(2)
+      const projects = await masterzTemplateContract.connect(owner).listProjects()
+      expect(projects[0].projectState).equals(2)
     })
 
     itIf(integrationTestsOn)('Should not start non-existing project', async function () {
       await deployProject()
       await approveDonationToContract()
-      await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('10'))).wait()
-      expect(await masterzTemplateContract.connect(owner).startProject(1)).to.be.revertedWith('project does not exist')
+      await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('5'))).wait()
+      expect(await masterzTemplateContract.connect(owner).startProject(1)).to.be.revertedWith('P not existing')
     })
 
     itIf(integrationTestsOn)('Should not start project if not admin', async function () {
       await deployProject()
       await approveDonationToContract()
-      await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('10'))).wait()
+      await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('5'))).wait()
       expect(await masterzTemplateContract.connect(donor).startProject(0)).to.be.revertedWith(
         'only DEFAULT_ADMIN_ROLE can create templates',
       )
@@ -189,7 +239,7 @@ describe('MasterZTemplate', function () {
     itIf(integrationTestsOn)('First checkpoint should be the activated checkpoint', async function () {
       await deployProject()
       await approveDonationToContract()
-      await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('10'))).wait()
+      await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('5'))).wait()
       await (await masterzTemplateContract.connect(owner).startProject(0)).wait()
       const projects = await masterzTemplateContract.connect(owner).listProjects()
       const checkpoints = projects[0].checkpoints
@@ -200,7 +250,7 @@ describe('MasterZTemplate', function () {
     itIf(integrationTestsOn)('Should start first checkpoint', async function () {
       await deployProject()
       await approveDonationToContract()
-      await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('10'))).wait()
+      await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('5'))).wait()
       await (await masterzTemplateContract.connect(owner).startProject(0)).wait()
       await (await masterzTemplateContract.connect(owner).startCheckPoint(0)).wait()
       const projects = await masterzTemplateContract.connect(owner).listProjects()
@@ -212,7 +262,7 @@ describe('MasterZTemplate', function () {
     itIf(integrationTestsOn)('Should not start checkpoint if not admin', async function () {
       await deployProject()
       await approveDonationToContract()
-      await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('10'))).wait()
+      await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('5'))).wait()
       await (await masterzTemplateContract.connect(owner).startProject(0)).wait()
       expect(await masterzTemplateContract.connect(donor).startCheckPoint(0)).to.be.revertedWith(
         'only DEFAULT_ADMIN_ROLE can create templates',
@@ -223,7 +273,7 @@ describe('MasterZTemplate', function () {
     itIf(integrationTestsOn)('Should finish first checkpoint', async function () {
       await deployProject()
       await approveDonationToContract()
-      await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('10'))).wait()
+      await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('5'))).wait()
       await (await masterzTemplateContract.connect(owner).startProject(0)).wait()
       await (await masterzTemplateContract.connect(owner).startCheckPoint(0)).wait()
       await (await masterzTemplateContract.connect(owner).finishCheckpoint(0)).wait()
@@ -239,18 +289,16 @@ describe('MasterZTemplate', function () {
     itIf(integrationTestsOn)('Should not start second checkpoint', async function () {
       await deployProject()
       await approveDonationToContract()
-      await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('10'))).wait()
+      await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('5'))).wait()
       await (await masterzTemplateContract.connect(owner).startProject(0)).wait()
-      expect(await masterzTemplateContract.connect(owner).startCheckPoint(1)).to.be.revertedWith(
-        'Checkpoint not ready to start',
-      )
+      expect(await masterzTemplateContract.connect(owner).startCheckPoint(1)).to.be.revertedWith('Wrong CS')
     })
 
     // test with non-admin account
     itIf(integrationTestsOn)('Should start second checkpoint', async function () {
       await deployProject()
       await approveDonationToContract()
-      await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('10'))).wait()
+      await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('5'))).wait()
       await (await masterzTemplateContract.connect(owner).startProject(0)).wait()
       await (await masterzTemplateContract.connect(owner).startCheckPoint(0)).wait()
       await (await masterzTemplateContract.connect(owner).finishCheckpoint(0)).wait()
@@ -265,7 +313,7 @@ describe('MasterZTemplate', function () {
     itIf(integrationTestsOn)('Should finish second checkpoint', async function () {
       await deployProject()
       await approveDonationToContract()
-      await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('10'))).wait()
+      await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('5'))).wait()
       await (await masterzTemplateContract.connect(owner).startProject(0)).wait()
       await (await masterzTemplateContract.connect(owner).startCheckPoint(0)).wait()
       await (await masterzTemplateContract.connect(owner).finishCheckpoint(0)).wait()
@@ -282,7 +330,7 @@ describe('MasterZTemplate', function () {
     itIf(integrationTestsOn)('Should run entire campaign', async function () {
       await deployProject()
       await approveDonationToContract()
-      await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('10'))).wait()
+      await (await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('5'))).wait()
       await (await masterzTemplateContract.connect(owner).startProject(0)).wait()
       await (await masterzTemplateContract.connect(owner).startCheckPoint(0)).wait() // checkpoint 1
       await (await masterzTemplateContract.connect(owner).finishCheckpoint(0)).wait()
@@ -303,16 +351,15 @@ describe('MasterZTemplate', function () {
     itIf(integrationTestsOn)('Should kill project', async function () {
       await deployProject()
       await masterzTemplateContract.connect(owner).abortProject(0)
-      expect(await masterzTemplateContract.connect(owner).getProjectStatus(0)).equals(4)
+      const projects = await masterzTemplateContract.connect(owner).listProjects()
+      expect(projects[0].projectState).equals(4)
     })
 
     itIf(integrationTestsOn)('Should not accept funds if project aborted', async function () {
       await deployProject()
       await approveDonationToContract()
       await masterzTemplateContract.connect(owner).abortProject(0)
-      expect(await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('1'))).to.be.revertedWith(
-        'PS not correct',
-      )
+      expect(await masterzTemplateContract.connect(owner).donate(0, BigNumber.from('1'))).to.be.revertedWith('Wrong PS')
     })
   })
 })

@@ -9,6 +9,7 @@ export type DeployedAddresses = {
   ExampleProjectTemplate: string
   MasterZTemplate: string
   AddressBookLibrary: string
+  ProjectsLibrary: string
 }
 
 async function main() {
@@ -41,12 +42,18 @@ async function main() {
   await addressBookLibraryContract.deployed()
   console.log(`AddressBookLibrary deployed to ${addressBookLibraryContract.address}`)
 
+  const projectsLibraryFactory = await ethers.getContractFactory('ProjectsLibrary')
+  const projectsLibraryContract = await projectsLibraryFactory.deploy()
+  await projectsLibraryContract.deployed()
+  console.log(`ProjectsLibrary deployed to ${projectsLibraryContract.address}`)
+
   const masterzTemplateFactory = await ethers.getContractFactory('MasterZTemplate', {
     libraries: {
       AddressBookLibrary: addressBookLibraryContract.address,
+      ProjectsLibrary: projectsLibraryContract.address,
     },
   })
-  const masterzTemplateContract = await masterzTemplateFactory.deploy()
+  const masterzTemplateContract = await masterzTemplateFactory.deploy('info message', 5)
   await masterzTemplateContract.transferOwnership(managerContract.address)
   await (
     await addressBookContract.grantRole(await addressBookContract.MANAGER_DONOR_ROLE(), masterzTemplateContract.address)
@@ -65,6 +72,7 @@ async function main() {
     ExampleProjectTemplate: exampleProjectTemplateContract.address,
     MasterZTemplate: masterzTemplateContract.address,
     AddressBookLibrary: addressBookLibraryContract.address,
+    ProjectsLibrary: projectsLibraryContract.address,
   }
 
   fs.writeFileSync('./src/addresses.json', JSON.stringify(addresses, null, 2), 'utf8')
