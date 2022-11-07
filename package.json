@@ -46,7 +46,7 @@
     "@types/node-polyglot": "^2.4.2",
     "@walletconnect/web3-provider": "^1.8.0",
     "autoprefixer": "^10.4.13",
-    "ganache": "^7.4.4",
+    "ganache": "^7.5.0",
     "hardhat": "2.12.1",
     "hardhat-gas-reporter": "^1.0.9",
     "postcss": "^8.4.18",
