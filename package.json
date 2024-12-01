@@ -26,7 +26,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@celo/contractkit": "2.1.0",
+    "@celo/contractkit": "2.3.0",
     "@esbuild-plugins/node-globals-polyfill": "^0.1.1",
     "@esbuild-plugins/node-modules-polyfill": "^0.1.4",
     "@openzeppelin/contracts": "4.7.3",
